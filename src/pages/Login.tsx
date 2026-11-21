@@ -1,0 +1,101 @@
+import { useState } from "react";
+import { Marchio } from "@/components/Marchio";
+import { useAuth } from "@/lib/auth";
+import { Caricamento } from "@/mobile/atoms";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+
+const DEMO = [
+  "operatore.ps@demo.asl",
+  "referente@demo.asl",
+  "sinistri@demo.asl",
+  "direzione@demo.asl",
+  "regione@demo.asl",
+  "broker@demo.asl",
+  "admin@demo.asl",
+];
+
+export function Login() {
+  const { caricamento, accedi } = useAuth();
+  const [email, setEmail] = useState("operatore.ps@demo.asl");
+  const [password, setPassword] = useState("");
+  const [errore, setErrore] = useState("");
+  const [invio, setInvio] = useState(false);
+
+  if (caricamento) return <Caricamento etichetta="Verifico la sessione…" />;
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setErrore("");
+    setInvio(true);
+    try {
+      await accedi(email, password);
+    } catch (err) {
+      setErrore(err instanceof Error ? err.message : "Accesso non riuscito");
+    } finally {
+      setInvio(false);
+    }
+  }
+
+  return (
+    <div className="relative min-h-[100dvh] overflow-hidden bg-background">
+      <div className="pointer-events-none absolute inset-0 bg-gradient-glow opacity-50" />
+      <div className="pointer-events-none absolute -left-16 top-10 h-48 w-48 rounded-full bg-primary/20 blur-3xl" />
+      <div className="pointer-events-none absolute -right-10 bottom-20 h-56 w-56 rounded-full bg-accent/20 blur-3xl" />
+
+      <div className="relative mx-auto flex min-h-[100dvh] max-w-lg flex-col justify-center px-4 py-10">
+        <div className="mb-8 flex justify-center">
+          <Marchio grande sottotitolo="Piattaforma rischio clinico-assicurativo" />
+        </div>
+
+        <form
+          onSubmit={(e) => void onSubmit(e)}
+          className="space-y-4 rounded-3xl border-2 border-border bg-card/80 p-6 shadow-2xl backdrop-blur-xl"
+        >
+          <p className="text-sm text-muted-foreground">
+            Accesso con email e password su Supabase Auth, collegato a <code>rischio_clinico.profiles</code>. Il
+            secondo fattore non è ancora attivo.
+          </p>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              autoComplete="username"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          {errore ? <p className="text-sm text-destructive">{errore}</p> : null}
+          <Button type="submit" className="w-full" disabled={invio}>
+            {invio ? "Accesso…" : "Entra"}
+          </Button>
+          <p className="text-[10.5px] text-muted-foreground">Utenti demo ASP Messina:</p>
+          <ul className="text-[10.5px] text-muted-foreground">
+            {DEMO.map((d) => (
+              <li key={d}>
+                <button type="button" className="underline-offset-2 hover:underline" onClick={() => setEmail(d)}>
+                  {d}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <p className="text-[10.5px] text-muted-foreground">Password unica demo: DemoRischio2026!</p>
+        </form>
+      </div>
+    </div>
+  );
+}
