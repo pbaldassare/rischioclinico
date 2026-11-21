@@ -10,14 +10,15 @@ import { Link } from "react-router-dom";
 
 const DEMO = [
   { email: "admin@demo.asl", livello: "Admin — tutte le ASL, statistiche, sinistri" },
-  { email: "referente@demo.asl", livello: "ASL / presidio — ASP Messina" },
-  { email: "sinistri@demo.asl", livello: "ASL / presidio — AO Papardo" },
-  { email: "operatore.ps@demo.asl", livello: "Operatore — PWA Pronto soccorso Taormina" },
+  { email: "nord@demo.asl", livello: "ASL / presidio — ASL Nord" },
+  { email: "costa@demo.asl", livello: "ASL / presidio — ASL Costa" },
+  { email: "operatore.nord@demo.asl", livello: "Operatore — PWA Pronto soccorso Collina" },
+  { email: "operatore.costa@demo.asl", livello: "Operatore — PWA Pronto soccorso Litorale" },
 ];
 
 export function Login() {
   const { caricamento, accedi } = useAuth();
-  const [email, setEmail] = useState("operatore.ps@demo.asl");
+  const [email, setEmail] = useState("operatore.nord@demo.asl");
   const [password, setPassword] = useState("");
   const [errore, setErrore] = useState("");
   const [invio, setInvio] = useState(false);
