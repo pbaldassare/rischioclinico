@@ -4,6 +4,7 @@ import { Intestazione } from "@/mobile/Intestazione";
 import { Caricamento, Scheda, Vuoto } from "@/mobile/atoms";
 import { fetchSegnalazioni } from "@/lib/queries";
 import { useAuth } from "@/lib/auth";
+import { haPrivilegio } from "@/lib/livelli";
 import { filtriPerProfilo } from "@/lib/ambito";
 import { useCatalog } from "@/lib/catalog";
 import { formatData } from "@/lib/format";
@@ -21,6 +22,14 @@ export function PwaCoda() {
     queryFn: () => fetchSegnalazioni(filtri),
   });
 
+  if (!haPrivilegio(profilo, "coda")) {
+    return (
+      <div className="flex flex-1 flex-col px-4 pb-4">
+        <Intestazione titolo="Coda segnalazioni" sottotitolo="Privilegio non assegnato" />
+        <Vuoto titolo="Non abilitato" testo="L’ASL non ti ha dato il privilegio di vedere la coda." />
+      </div>
+    );
+  }
   if (q.isLoading) return <Caricamento />;
   let lista = q.data ?? [];
   if (filtro !== "tutte") lista = lista.filter((s) => s.stato === filtro);

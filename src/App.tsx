@@ -9,6 +9,7 @@ import { PwaNuova } from "@/pages/pwa/Nuova";
 import { PwaCoda } from "@/pages/pwa/Coda";
 import { PwaDettaglio } from "@/pages/pwa/Dettaglio";
 import { PwaProfilo } from "@/pages/pwa/Profilo";
+import { PwaFdr } from "@/pages/pwa/Fdr";
 import { Backoffice } from "@/pages/bo/Backoffice";
 import { BoDashboard } from "@/pages/bo/Dashboard";
 import { BoSegnalazioni } from "@/pages/bo/Segnalazioni";
@@ -21,12 +22,19 @@ import { BoReport } from "@/pages/bo/Report";
 import { BoSentinella } from "@/pages/bo/Sentinella";
 import { BoLegale } from "@/pages/bo/Legale";
 import { BoLegaleDettaglio } from "@/pages/bo/LegaleDettaglio";
+import { BoAnagrafica } from "@/pages/bo/Anagrafica";
+import { BoReparti } from "@/pages/bo/Reparti";
+import { BoOperatori } from "@/pages/bo/Operatori";
 import { Caricamento } from "@/mobile/atoms";
+import { usaPwa } from "@/lib/labels";
 
-function RequireAuth() {
-  const { profilo, caricamento } = useAuth();
+function RequireAuth({ pwa }: { pwa?: boolean }) {
+  const { profilo, caricamento, homeDopoLogin } = useAuth();
   if (caricamento) return <Caricamento />;
   if (!profilo) return <Navigate to="/" replace />;
+  const vuolePwa = usaPwa(profilo.ruolo);
+  if (pwa && !vuolePwa) return <Navigate to={homeDopoLogin(profilo)} replace />;
+  if (!pwa && vuolePwa) return <Navigate to="/app" replace />;
   return (
     <CatalogProvider>
       <Outlet />
@@ -47,14 +55,25 @@ export default function App() {
       <Routes>
         <Route path="/" element={<PortaLogin />} />
         <Route path="/installa" element={<Installa />} />
-        <Route element={<RequireAuth />}>
+        <Route element={<RequireAuth pwa />}>
           <Route path="/app" element={<MobileShell />}>
             <Route index element={<PwaHome />} />
             <Route path="nuova" element={<PwaNuova />} />
             <Route path="coda" element={<PwaCoda />} />
             <Route path="coda/:id" element={<PwaDettaglio />} />
+            <Route path="fdr" element={<PwaFdr />} />
+            <Route
+              path="fdr/:id"
+              element={
+                <div className="px-4 pb-6">
+                  <BoFdrDettaglio />
+                </div>
+              }
+            />
             <Route path="profilo" element={<PwaProfilo />} />
           </Route>
+        </Route>
+        <Route element={<RequireAuth />}>
           <Route path="/bo" element={<Backoffice />}>
             <Route index element={<BoDashboard />} />
             <Route path="segnalazioni" element={<BoSegnalazioni />} />
@@ -67,6 +86,9 @@ export default function App() {
             <Route path="sentinella" element={<BoSentinella />} />
             <Route path="legale" element={<BoLegale />} />
             <Route path="legale/:id" element={<BoLegaleDettaglio />} />
+            <Route path="anagrafica" element={<BoAnagrafica />} />
+            <Route path="reparti" element={<BoReparti />} />
+            <Route path="operatori" element={<BoOperatori />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

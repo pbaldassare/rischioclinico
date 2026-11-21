@@ -21,7 +21,7 @@ export function BoReport() {
   const seg = useQuery({ queryKey: ["segnalazioni", filtri], queryFn: () => fetchSegnalazioni(filtri) });
   const sin = useQuery({ queryKey: ["sinistri", filtri], queryFn: () => fetchSinistri(filtri) });
 
-  const livello = filtri.unitaId ? "Reparto" : filtri.presidioId ? "Presidio" : filtri.aziendaId ? "Azienda" : "Rete";
+  const livello = filtri.unitaId ? "Reparto" : filtri.presidioId ? "Ospedale" : filtri.aziendaId ? "ASL" : "Tutte le ASL";
 
   const perPresidio = useMemo(() => {
     const map = new Map<string, { nome: string; n: number; importo: number }>();
@@ -53,7 +53,7 @@ export function BoReport() {
       <p className="text-sm text-muted-foreground">
         Stessi indicatori, ambito diverso. Livello attuale: <strong>{livello}</strong>.
       </p>
-      <FiltriAmbito value={filtri} onChange={setFiltri} mostraAzienda />
+      <FiltriAmbito value={filtri} onChange={setFiltri} mostraAzienda={profilo?.ruolo === "admin"} />
       <div className="griglia-kpi grid gap-4 md:grid-cols-3">
         <KpiCard icon={BarChart3} titolo="Segnalazioni" valore={seg.data?.length ?? 0} />
         <KpiCard icon={Landmark} titolo="Sinistri" valore={sin.data?.length ?? 0} />

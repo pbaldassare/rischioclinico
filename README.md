@@ -2,7 +2,7 @@
 
 Piattaforma web (PWA + backoffice) per la gestione del rischio clinico-assicurativo: segnalazioni, fotografia del rischio, sinistri ed eventi sentinella.
 
-Una sola app Vite + React + TypeScript. Su telefono (colonna max 480px, tab bar in basso) è la PWA di reparto; su desktop il backoffice con sidebar.
+Una sola app Vite + React + TypeScript. Tre livelli: **Admin**, **ASL / presidio**, **Operatore**. Su telefono (colonna max 480px, tab bar in basso) è la PWA di reparto; su desktop il backoffice con sidebar.
 
 ## Come avviare
 
@@ -32,29 +32,26 @@ Senza `OPENAI_API_KEY` l’assistente usa una bozza locale. Lo schema Postgres �
 
 ## Accesso demo
 
-Login reale su Supabase Auth (email + password). Gli utenti coincidono con `rischio_clinico.profiles.id`.
+Login reale su Supabase Auth (email + password). Gli utenti coincidono con `rischio_clinico.profiles.id`. Password unica: `DemoRischio2026!`
 
-| Email | Ruolo | Entrata |
+| Email | Livello | Entrata |
 | --- | --- | --- |
-| operatore.ps@demo.asl | Operatore (PWA) | `/app` |
-| referente@demo.asl | Referente del rischio | `/bo` |
-| sinistri@demo.asl | Amministrativo sinistri | `/bo` |
-| direzione@demo.asl | Direzione | `/bo` |
-| regione@demo.asl | Regione | `/bo` |
-| broker@demo.asl | Broker | `/bo` |
-| admin@demo.asl | Amministratore | `/bo` |
+| admin@demo.asl | Admin | `/bo` — crea ASL e ospedali, tutte le statistiche, richieste e sinistri |
+| referente@demo.asl | ASL / presidio (ASP Messina) | `/bo` — solo Messina: reparti, operatori, sue stats |
+| sinistri@demo.asl | ASL / presidio (AO Papardo) | `/bo` — solo Papardo |
+| operatore.ps@demo.asl | Operatore | `/app` — PWA sul Pronto soccorso Taormina, con i privilegi dati dall’ASL |
 
-Password unica: `DemoRischio2026!`
+I vecchi ruoli (referente, direzione, regione, broker, amministrativo sinistri) non sono più livelli di accesso.
 
 ## Percorsi
 
 - `/` login email + password, con pulsante **Installa l’app**
-- `/installa` pagina pubblica di installazione PWA (stesso controllo nativo / istruzioni iOS)
-- `/app` PWA: home (install visibile), nuova segnalazione (assistente voce/foto, allegati), coda, dettaglio (RCA P×M×R), profilo
-- `/bo` backoffice: dashboard, segnalazioni, sinistri, FDR, report per livello, 23 tipi sentinella, pratiche legali in consultazione
+- `/installa` pagina pubblica di installazione PWA
+- `/app` PWA operatore: home, nuova segnalazione, coda, FDR se abilitato, profilo
+- `/bo` backoffice Admin/ASL: dashboard, segnalazioni, sinistri, FDR, report, sentinella, legale; Admin anche anagrafica ASL; ASL anche reparti e operatori
 
 Origine pubblica: `https://rischioclinico.pages.dev/`. Installazione: `https://rischioclinico.pages.dev/installa`. L’app installata parte da `/app`.
 
 L’assistente propone solo bozze: l’operatore conferma prima di salvare. Non scrive da solo in archivio.
 
-Non in questo rilascio: 2FA, offline, SIR avanzata, cruscotto Regione, export SIMES.
+Non in questo rilascio: 2FA, offline, SIR avanzata, export SIMES.

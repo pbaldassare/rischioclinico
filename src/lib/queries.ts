@@ -9,6 +9,7 @@ import type {
   FotografiaRischio,
   PraticaLegale,
   Presidio,
+  Privilegio,
   Profile,
   Segnalazione,
   Sinistro,
@@ -17,6 +18,17 @@ import type {
   VoceFotografia,
   VoceModello,
 } from "./types";
+
+const PROFILE_SELECT = `
+  *,
+  assegnazioni:assegnazioni_reparto(
+    id,
+    profile_id,
+    unita_operativa_id,
+    privilegi,
+    unita:unita_operative(id,nome,presidio_id)
+  )
+`;
 
 const SEGNALAZIONE_SELECT = `
   *,
@@ -34,11 +46,11 @@ const SINISTRO_SELECT = `
 `;
 
 export async function fetchProfile(id: string, email?: string | null) {
-  const byId = await supabase.from("profiles").select("*").eq("id", id).maybeSingle();
+  const byId = await supabase.from("profiles").select(PROFILE_SELECT).eq("id", id).maybeSingle();
   if (byId.error) throw byId.error;
   if (byId.data) return byId.data as Profile;
   if (!email) return null;
-  const byEmail = await supabase.from("profiles").select("*").eq("email", email).maybeSingle();
+  const byEmail = await supabase.from("profiles").select(PROFILE_SELECT).eq("email", email).maybeSingle();
   if (byEmail.error) throw byEmail.error;
   return (byEmail.data as Profile) ?? null;
 }
@@ -260,4 +272,108 @@ export async function fetchPraticaDaSinistro(sinistroId: string) {
     .maybeSingle();
   if (error) throw error;
   return data as { id: string; numero_pratica: string | null; stato: string } | null;
+}
+
+export async function creaAzienda(input: { nome: string; tipo?: string; codice_sis?: string; regione_codice?: string }) {
+  const { data, error } = await supabase
+    .from("aziende")
+    .insert({
+      nome: input.nome,
+      tipo: input.tipo || "asl",
+      codice_sis: input.codice_sis || null,
+      regione_codice: input.regione_codice || null,
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as Azienda;
+}
+
+export async function creaPresidio(input: {
+  azienda_id: string;
+  nome: string;
+  codice_struttura?: string;
+  posti_letto?: number | null;
+}) {
+  const { data, error } = await supabase
+    .from("presidi")
+    .insert({
+      azienda_id: input.azienda_id,
+      nome: input.nome,
+      codice_struttura: input.codice_struttura || null,
+      posti_letto: input.posti_letto ?? null,
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as Presidio;
+}
+
+export async function creaReparto(input: { presidio_id: string; nome: string; codice_disciplina?: string }) {
+  const { data, error } = await supabase
+    .from("unita_operative")
+    .insert({
+      presidio_id: input.presidio_id,
+      nome: input.nome,
+      codice_disciplina: input.codice_disciplina || null,
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as UnitaOperativa;
+}
+
+export async function fetchOperatori() {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select(PROFILE_SELECT)
+    .eq("ruolo", "operatore")
+    .eq("attivo", true)
+    .order("nome");
+  if (error) throw error;
+  return (data ?? []) as Profile[];
+}
+
+export async function fetchUtentiPresidio() {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("ruolo", "presidio")
+    .eq("attivo", true)
+    .order("nome");
+  if (error) throw error;
+  return (data ?? []) as Profile[];
+}
+
+export async function sostituisciAssegnazioni(
+  profileId: string,
+  items: { unita_operativa_id: string; privilegi: Privilegio[] }[],
+) {
+  const { error: del } = await supabase.from("assegnazioni_reparto").delete().eq("profile_id", profileId);
+  if (del) throw del;
+  if (!items.length) return;
+  const { error } = await supabase.from("assegnazioni_reparto").insert(
+    items.map((i) => ({
+      profile_id: profileId,
+      unita_operativa_id: i.unita_operativa_id,
+      privilegi: i.privilegi,
+    })),
+  );
+  if (error) throw error;
+}
+
+export async function creaUtentePiattaforma(input: {
+  nome: string;
+  email: string;
+  ruolo: "presidio" | "operatore";
+  azienda_id?: string | null;
+  presidio_id?: string | null;
+  password?: string;
+  assegnazioni?: { unita_operativa_id: string; privilegi: Privilegio[] }[];
+}) {
+  const { data, error } = await supabase.functions.invoke("rc-crea-utente", { body: input });
+  if (error) throw error;
+  const body = data as { error?: string; user_id?: string; message?: string } | null;
+  if (body?.error) throw new Error(body.error);
+  return body;
 }

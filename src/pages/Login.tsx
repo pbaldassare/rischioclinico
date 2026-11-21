@@ -9,13 +9,10 @@ import { PulsanteInstalla } from "@/components/PulsanteInstalla";
 import { Link } from "react-router-dom";
 
 const DEMO = [
-  "operatore.ps@demo.asl",
-  "referente@demo.asl",
-  "sinistri@demo.asl",
-  "direzione@demo.asl",
-  "regione@demo.asl",
-  "broker@demo.asl",
-  "admin@demo.asl",
+  { email: "admin@demo.asl", livello: "Admin — tutte le ASL, statistiche, sinistri" },
+  { email: "referente@demo.asl", livello: "ASL / presidio — ASP Messina" },
+  { email: "sinistri@demo.asl", livello: "ASL / presidio — AO Papardo" },
+  { email: "operatore.ps@demo.asl", livello: "Operatore — PWA Pronto soccorso Taormina" },
 ];
 
 export function Login() {
@@ -63,8 +60,7 @@ export function Login() {
           className="space-y-4 rounded-3xl border-2 border-border bg-card/80 p-6 shadow-2xl backdrop-blur-xl"
         >
           <p className="text-sm text-muted-foreground">
-            Accesso con email e password su Supabase Auth, collegato a <code>rischio_clinico.profiles</code>. Il
-            secondo fattore non è ancora attivo.
+            Tre livelli: Admin, ASL/presidio, Operatore. Accesso con email e password su Supabase Auth.
           </p>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
@@ -92,12 +88,13 @@ export function Login() {
           <Button type="submit" className="w-full" disabled={invio}>
             {invio ? "Accesso…" : "Entra"}
           </Button>
-          <p className="text-[10.5px] text-muted-foreground">Utenti demo ASP Messina:</p>
-          <ul className="text-[10.5px] text-muted-foreground">
+          <p className="text-[10.5px] text-muted-foreground">Utenti demo (stessa password):</p>
+          <ul className="space-y-1 text-[10.5px] text-muted-foreground">
             {DEMO.map((d) => (
-              <li key={d}>
-                <button type="button" className="underline-offset-2 hover:underline" onClick={() => setEmail(d)}>
-                  {d}
+              <li key={d.email}>
+                <button type="button" className="text-left underline-offset-2 hover:underline" onClick={() => setEmail(d.email)}>
+                  <span className="font-semibold text-foreground">{d.email}</span>
+                  <span className="block">{d.livello}</span>
                 </button>
               </li>
             ))}

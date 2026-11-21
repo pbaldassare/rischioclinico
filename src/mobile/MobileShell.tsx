@@ -1,22 +1,26 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { ClipboardList, Home, PlusCircle, User } from "lucide-react";
+import { ClipboardList, Home, PlusCircle, User, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { fetchSegnalazioni } from "@/lib/queries";
 import { useAuth } from "@/lib/auth";
 import { filtriPerProfilo } from "@/lib/ambito";
+import { haPrivilegio } from "@/lib/livelli";
 import { Toaster } from "@/components/ui/sonner";
-
-const SEZIONI = [
-  { to: "/app", end: true, icona: Home, label: "Home" },
-  { to: "/app/nuova", end: false, icona: PlusCircle, label: "Nuova" },
-  { to: "/app/coda", end: false, icona: ClipboardList, label: "Coda" },
-  { to: "/app/profilo", end: false, icona: User, label: "Profilo" },
-] as const;
+import { useMemo } from "react";
 
 export function MobileShell() {
   const { profilo } = useAuth();
   const filtri = filtriPerProfilo(profilo);
+  const sezioni = useMemo(() => {
+    const voci: { to: string; end: boolean; icona: LucideIcon; label: string }[] = [
+      { to: "/app", end: true, icona: Home, label: "Home" },
+    ];
+    if (haPrivilegio(profilo, "segnalare")) voci.push({ to: "/app/nuova", end: false, icona: PlusCircle, label: "Nuova" });
+    if (haPrivilegio(profilo, "coda")) voci.push({ to: "/app/coda", end: false, icona: ClipboardList, label: "Coda" });
+    voci.push({ to: "/app/profilo", end: false, icona: User, label: "Profilo" });
+    return voci;
+  }, [profilo]);
   const coda = useQuery({
     queryKey: ["segnalazioni", "coda-badge", filtri],
     queryFn: () => fetchSegnalazioni(filtri),
@@ -31,8 +35,8 @@ export function MobileShell() {
       </main>
 
       <nav className="flex-none border-t border-border bg-card pb-[env(safe-area-inset-bottom)]" aria-label="Navigazione">
-        <ul className="grid grid-cols-4 items-center px-2">
-          {SEZIONI.map(({ to, end, icona: Icona, label }) => (
+        <ul className={cn("grid items-center px-2", sezioni.length === 4 ? "grid-cols-4" : "grid-cols-3")}>
+          {sezioni.map(({ to, end, icona: Icona, label }) => (
             <li key={to}>
               <NavLink
                 to={to}

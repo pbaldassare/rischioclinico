@@ -37,7 +37,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     enabled: !!utente?.id,
   });
 
-  const profilo = q.data ?? null;
+  useEffect(() => {
+    if (q.data && q.data.attivo === false) {
+      void supabase.auth.signOut();
+    }
+  }, [q.data]);
+
+  const profilo = q.data?.attivo ? q.data : null;
   const caricamento = !sessionePronta || (!!utente && q.isLoading);
 
   const value: AuthCtx = {
