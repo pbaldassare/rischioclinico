@@ -1,0 +1,61 @@
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import {
+  BarChart3,
+  ClipboardList,
+  FolderHeart,
+  Home,
+  Landmark,
+  Scale,
+  ShieldAlert,
+} from "lucide-react";
+import { DashboardShell, type VoceMenu } from "@/components/DashboardShell";
+import { Marchio } from "@/components/Marchio";
+import { useAuth } from "@/lib/auth";
+import { ETICHETTE_RUOLO } from "@/lib/labels";
+import { Toaster } from "@/components/ui/sonner";
+
+const VOCI: VoceMenu[] = [
+  { id: "/bo", label: "Home", icon: Home },
+  { id: "/bo/segnalazioni", label: "Segnalazioni", icon: ClipboardList },
+  { id: "/bo/sinistri", label: "Sinistri", icon: Landmark },
+  { id: "/bo/fdr", label: "Fotografia del rischio", icon: FolderHeart },
+  { id: "/bo/report", label: "Report per livello", icon: BarChart3 },
+  { id: "/bo/sentinella", label: "Eventi sentinella", icon: ShieldAlert },
+  { id: "/bo/legale", label: "Pratiche legali", icon: Scale },
+];
+
+export function Backoffice() {
+  const loc = useLocation();
+  const navigate = useNavigate();
+  const { profilo, esci } = useAuth();
+  const attiva = VOCI.map((v) => v.id)
+    .sort((a, b) => b.length - a.length)
+    .find((id) => (id === "/bo" ? loc.pathname === "/bo" : loc.pathname.startsWith(id))) ?? "/bo";
+  const titolo = VOCI.find((v) => v.id === attiva)?.label ?? "Backoffice";
+
+  return (
+    <>
+      <DashboardShell
+        marchio={<Marchio sottotitolo={ETICHETTE_RUOLO[profilo?.ruolo ?? "direzione"]} />}
+        voci={VOCI}
+        attiva={attiva}
+        onSeleziona={(id) => navigate(id)}
+        email={profilo?.email}
+        onEsci={() => {
+          esci();
+          navigate("/");
+        }}
+        etichettaEsci="Esci"
+        titolo={titolo}
+        descrizione={
+          attiva === "/bo"
+            ? "Cruscotto aziendale: segnalazioni, sinistri, FDR e sentinella."
+            : undefined
+        }
+      >
+        <Outlet />
+      </DashboardShell>
+      <Toaster />
+    </>
+  );
+}
