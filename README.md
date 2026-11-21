@@ -48,9 +48,12 @@ Password unica: `DemoRischio2026!`
 
 ## Percorsi
 
-- `/` login email + password
-- `/app` PWA: home, nuova segnalazione (assistente voce/foto, allegati), coda, dettaglio (RCA P×M×R), profilo
+- `/` login email + password, con pulsante **Installa l’app**
+- `/installa` pagina pubblica di installazione PWA (stesso controllo nativo / istruzioni iOS)
+- `/app` PWA: home (install visibile), nuova segnalazione (assistente voce/foto, allegati), coda, dettaglio (RCA P×M×R), profilo
 - `/bo` backoffice: dashboard, segnalazioni, sinistri, FDR, report per livello, 23 tipi sentinella, pratiche legali in consultazione
+
+Origine pubblica: `https://rischioclinico.pages.dev/`. Installazione: `https://rischioclinico.pages.dev/installa`. L’app installata parte da `/app`.
 
 L’assistente propone solo bozze: l’operatore conferma prima di salvare. Non scrive da solo in archivio.
 

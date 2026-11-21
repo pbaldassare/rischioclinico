@@ -10,6 +10,7 @@ import { fetchFotografie, fetchSegnalazioni, fetchSinistri } from "@/lib/queries
 import { StatoBadge } from "@/components/StatoBadge";
 import { useCatalog } from "@/lib/catalog";
 import { formatData } from "@/lib/format";
+import { PulsanteInstalla } from "@/components/PulsanteInstalla";
 
 export function PwaHome() {
   const { profilo } = useAuth();
@@ -29,6 +30,8 @@ export function PwaHome() {
   return (
     <div className="flex flex-1 flex-col px-4 pb-4">
       <Intestazione titolo="Home" sottotitolo={`${profilo?.nome} · ${ETICHETTE_RUOLO[profilo?.ruolo ?? "operatore"]}`} />
+
+      <PulsanteInstalla />
 
       <div className="griglia-kpi mb-4 grid grid-cols-2 gap-2">
         <MiniKpi icon={FileWarning} titolo="Da prendere" valore={inviate} />

@@ -2,6 +2,7 @@ import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { CatalogProvider } from "@/lib/catalog";
 import { Login } from "@/pages/Login";
+import { Installa } from "@/pages/Installa";
 import { MobileShell } from "@/mobile/MobileShell";
 import { PwaHome } from "@/pages/pwa/Home";
 import { PwaNuova } from "@/pages/pwa/Nuova";
@@ -45,6 +46,7 @@ export default function App() {
     <AuthProvider>
       <Routes>
         <Route path="/" element={<PortaLogin />} />
+        <Route path="/installa" element={<Installa />} />
         <Route element={<RequireAuth />}>
           <Route path="/app" element={<MobileShell />}>
             <Route index element={<PwaHome />} />

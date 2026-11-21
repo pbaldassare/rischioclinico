@@ -1,5 +1,6 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
+import { VitePWA } from "vite-plugin-pwa";
 import path from "path";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { handleAssistente, type AssistenteRichiesta } from "./api/assistente";
@@ -49,7 +50,29 @@ export default defineConfig({
     host: "::",
     port: 8080,
   },
-  plugins: [react(), assistenteLocale()],
+  plugins: [
+    react(),
+    assistenteLocale(),
+    VitePWA({
+      registerType: "autoUpdate",
+      injectRegister: "auto",
+      filename: "sw.js",
+      includeAssets: [
+        "favicon.png",
+        "icons/apple-touch-icon.png",
+        "icons/icon-96.png",
+        "icons/icon-192.png",
+        "icons/icon-512.png",
+        "icons/icon-maskable-512.png",
+      ],
+      manifest: false,
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,webmanifest}"],
+        navigateFallback: "/index.html",
+        navigateFallbackDenylist: [/^\/api\//],
+      },
+    }),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
