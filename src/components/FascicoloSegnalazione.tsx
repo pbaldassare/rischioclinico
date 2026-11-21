@@ -15,6 +15,7 @@ import { caricaAllegati, urlFirmato } from "@/lib/allegati";
 import { AssistenteBozza } from "@/components/AssistenteBozza";
 import { useCatalog } from "@/lib/catalog";
 import { useAuth } from "@/lib/auth";
+import { eOperatore, puoGestireSinistri, puoLavorareSegnalazione } from "@/lib/livelli";
 import { formatData } from "@/lib/format";
 import { ETICHETTE_M, ETICHETTE_P, ETICHETTE_R } from "@/lib/labels";
 import type { Segnalazione } from "@/lib/types";
@@ -35,8 +36,8 @@ export function FascicoloSegnalazione({
     queryKey: ["sinistro-da-segnalazione", segnalazione.id],
     queryFn: () => fetchSinistroDaSegnalazione(segnalazione.id),
   });
-  const puoLavorare = ["referente_rischio", "amministratore", "direzione"].includes(profilo?.ruolo ?? "");
-  const puoSinistri = ["amministrativo_sinistri", "referente_rischio", "amministratore"].includes(profilo?.ruolo ?? "");
+  const puoLavorare = puoLavorareSegnalazione(profilo);
+  const puoSinistri = puoGestireSinistri(profilo);
 
   const prendi = useMutation({
     mutationFn: async () => {
@@ -134,10 +135,10 @@ export function FascicoloSegnalazione({
         </CardContent>
       </Wrap>
 
-      <AllegatiSegnalazione segnalazioneId={segnalazione.id} puoCaricare={puoLavorare || profilo?.ruolo === "operatore"} />
+      <AllegatiSegnalazione segnalazioneId={segnalazione.id} puoCaricare={puoLavorare || eOperatore(profilo)} />
       <CalcoloRca segnalazione={segnalazione} rca={rca} puoLavorare={puoLavorare} compatto={compatto} />
       <Azioni segnalazione={segnalazione} puoLavorare={puoLavorare} compatto={compatto} />
-      {sinistroCollegato.data ? (
+      {sinistroCollegato.data && !eOperatore(profilo) ? (
         <Link
           to={`/bo/sinistri/${sinistroCollegato.data.id}`}
           className="flex min-h-11 items-center justify-center rounded-full border border-border bg-card font-semibold"

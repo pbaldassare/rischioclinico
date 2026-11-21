@@ -32,7 +32,7 @@ export function BoSegnalazioni() {
 
   return (
     <div className="space-y-4">
-      <FiltriAmbito value={filtri} onChange={setFiltri} mostraAzienda={profilo?.ruolo === "regione"} />
+      <FiltriAmbito value={filtri} onChange={setFiltri} mostraAzienda={profilo?.ruolo === "admin"} />
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-2">
           <Label>Stato</Label>

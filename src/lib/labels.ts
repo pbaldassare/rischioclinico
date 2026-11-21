@@ -1,14 +1,9 @@
 import type { Ruolo } from "./types";
 
 export const ETICHETTE_RUOLO: Record<Ruolo, string> = {
-  operatore: "Operatore sanitario",
-  referente_rischio: "Referente del rischio",
-  amministrativo_sinistri: "Amministrativo sinistri",
-  legale: "Legale / contenzioso",
-  direzione: "Direzione aziendale",
-  regione: "Regione",
-  broker: "Broker",
-  amministratore: "Amministratore",
+  admin: "Amministrazione",
+  presidio: "ASL / presidio",
+  operatore: "Operatore",
 };
 
 export const ETICHETTE_STATO_SEGNALAZIONE: Record<string, string> = {

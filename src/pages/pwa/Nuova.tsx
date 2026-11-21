@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCatalog } from "@/lib/catalog";
 import { useAuth } from "@/lib/auth";
+import { haPrivilegio, unitaAssegnate } from "@/lib/livelli";
 import { supabase } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
 import { AssistenteBozza } from "@/components/AssistenteBozza";
@@ -19,13 +20,18 @@ export function PwaNuova() {
   const { profilo } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const presidi = useMemo(
-    () => cat.presidi.filter((p) => !profilo?.azienda_id || p.azienda_id === profilo.azienda_id),
-    [cat.presidi, profilo],
+  const assegnate = unitaAssegnate(profilo);
+  const unita = useMemo(
+    () => cat.unita.filter((u) => assegnate.includes(u.id)),
+    [cat.unita, assegnate],
   );
+  const presidi = useMemo(() => {
+    const ids = new Set(unita.map((u) => u.presidio_id));
+    return cat.presidi.filter((p) => ids.has(p.id));
+  }, [cat.presidi, unita]);
 
   const [presidioId, setPresidioId] = useState("");
-  const unita = cat.unita.filter((u) => u.presidio_id === presidioId);
+  const unitaDelPresidio = unita.filter((u) => u.presidio_id === presidioId);
   const [unitaId, setUnitaId] = useState("");
 
   useEffect(() => {
@@ -35,13 +41,10 @@ export function PwaNuova() {
 
   useEffect(() => {
     if (!presidioId) return;
-    const delPresidio = cat.unita.filter((u) => u.presidio_id === presidioId);
+    const delPresidio = unita.filter((u) => u.presidio_id === presidioId);
     if (!delPresidio.length) return;
-    if (!delPresidio.some((u) => u.id === unitaId)) {
-      const ps = delPresidio.find((u) => /pronto/i.test(u.nome));
-      setUnitaId(ps?.id ?? delPresidio[0].id);
-    }
-  }, [presidioId, cat.unita, unitaId]);
+    if (!delPresidio.some((u) => u.id === unitaId)) setUnitaId(delPresidio[0].id);
+  }, [presidioId, unita, unitaId]);
   const [dataOra, setDataOra] = useState(() => oraLocale());
   const [tipo, setTipo] = useState("caduta");
   const [gravita, setGravita] = useState("near_miss");
@@ -57,8 +60,16 @@ export function PwaNuova() {
   const [fileAllegati, setFileAllegati] = useState<File[]>([]);
 
   async function invia() {
+    if (!haPrivilegio(profilo, "segnalare")) {
+      toast.error("L’ASL non ti ha dato il privilegio di segnalare");
+      return;
+    }
     if (!dinamica.trim()) {
       toast.error("Descrivi la dinamica");
+      return;
+    }
+    if (!unitaId || !assegnate.includes(unitaId)) {
+      toast.error("Scegli un reparto assegnato");
       return;
     }
     setInvio(true);
@@ -142,7 +153,7 @@ export function PwaNuova() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {unita.map((u) => (
+              {unitaDelPresidio.map((u) => (
                 <SelectItem key={u.id} value={u.id}>
                   {u.nome}
                 </SelectItem>

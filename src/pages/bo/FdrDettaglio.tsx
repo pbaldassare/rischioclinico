@@ -13,6 +13,7 @@ import { pillFdr } from "@/components/StatoBadge";
 import { formatData } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
+import { haPrivilegio } from "@/lib/livelli";
 
 const RISPOSTE = ["Conforme", "Parziale", "Non conforme", "Non applicabile"];
 
@@ -20,7 +21,7 @@ export function BoFdrDettaglio() {
   const { id } = useParams();
   const { profilo } = useAuth();
   const qc = useQueryClient();
-  const puoCompilare = ["referente_rischio", "amministratore", "operatore", "direzione"].includes(profilo?.ruolo ?? "");
+  const puoCompilare = haPrivilegio(profilo, "fdr");
   const foto = useQuery({ queryKey: ["fotografia", id], queryFn: () => fetchFotografia(id!), enabled: !!id });
   const vociFoto = useQuery({
     queryKey: ["fotografia-voci", id],

@@ -1,12 +1,14 @@
-export type Ruolo =
-  | "operatore"
-  | "referente_rischio"
-  | "amministrativo_sinistri"
-  | "legale"
-  | "direzione"
-  | "regione"
-  | "broker"
-  | "amministratore";
+export type Ruolo = "admin" | "presidio" | "operatore";
+
+export type Privilegio = "segnalare" | "coda" | "fdr" | "lavorare";
+
+export interface AssegnazioneReparto {
+  id: string;
+  profile_id: string;
+  unita_operativa_id: string;
+  privilegi: Privilegio[];
+  unita?: UnitaOperativa | null;
+}
 
 export interface Profile {
   id: string;
@@ -16,6 +18,7 @@ export interface Profile {
   nome: string | null;
   ruolo: Ruolo;
   attivo: boolean;
+  assegnazioni?: AssegnazioneReparto[] | null;
 }
 
 export interface Azienda {

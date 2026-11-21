@@ -18,7 +18,7 @@ export function BoFdr() {
 
   return (
     <div className="space-y-4">
-      <FiltriAmbito value={filtri} onChange={setFiltri} mostraAzienda={profilo?.ruolo === "regione"} />
+      <FiltriAmbito value={filtri} onChange={setFiltri} mostraAzienda={profilo?.ruolo === "admin"} />
       <Card>
         <CardContent className="p-0 pt-2">
           <Table>

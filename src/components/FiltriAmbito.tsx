@@ -22,7 +22,7 @@ export function FiltriAmbito({
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {mostraAzienda ? (
-        <Campo label="Livello / Azienda">
+        <Campo label="ASL">
           <Select
             value={value.aziendaId ?? "tutte"}
             onValueChange={(v) =>
@@ -33,7 +33,7 @@ export function FiltriAmbito({
               <SelectValue placeholder="Azienda" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="tutte">Tutte le aziende</SelectItem>
+              <SelectItem value="tutte">Tutte le ASL</SelectItem>
               {aziende.map((a) => (
                 <SelectItem key={a.id} value={a.id}>
                   {a.nome}
@@ -44,7 +44,7 @@ export function FiltriAmbito({
         </Campo>
       ) : null}
 
-      <Campo label="Presidio">
+      <Campo label="Ospedale">
         <Select
           value={value.presidioId ?? "tutti"}
           onValueChange={(v) => onChange({ ...value, presidioId: v === "tutti" ? null : v, unitaId: null })}
@@ -53,7 +53,7 @@ export function FiltriAmbito({
             <SelectValue placeholder="Presidio" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="tutti">Tutti i presidi</SelectItem>
+            <SelectItem value="tutti">Tutti gli ospedali</SelectItem>
             {presidiFiltrati.map((p) => (
               <SelectItem key={p.id} value={p.id}>
                 {p.nome}
