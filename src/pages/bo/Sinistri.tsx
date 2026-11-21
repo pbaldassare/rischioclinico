@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { fetchSinistri } from "@/lib/queries";
 import { useAuth } from "@/lib/auth";
+import { filtriPerProfilo } from "@/lib/ambito";
 import { useCatalog } from "@/lib/catalog";
 import { ETICHETTE_STATO_SINISTRO } from "@/lib/labels";
 import { formatData, formatEuro, sommaMovimenti } from "@/lib/format";
@@ -15,9 +16,7 @@ import type { FiltriAmbito as Filtri } from "@/lib/types";
 export function BoSinistri() {
   const { profilo } = useAuth();
   const cat = useCatalog();
-  const [filtri, setFiltri] = useState<Filtri>({
-    aziendaId: profilo?.ruolo === "regione" ? null : profilo?.azienda_id,
-  });
+  const [filtri, setFiltri] = useState<Filtri>(() => filtriPerProfilo(profilo));
   const q = useQuery({ queryKey: ["sinistri", filtri], queryFn: () => fetchSinistri(filtri) });
   const lista = useMemo(() => q.data ?? [], [q.data]);
 

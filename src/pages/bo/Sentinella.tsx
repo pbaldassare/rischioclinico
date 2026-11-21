@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { fetchEventiSentinella } from "@/lib/queries";
 import { useAuth } from "@/lib/auth";
+import { filtriPerProfilo } from "@/lib/ambito";
 import { useCatalog } from "@/lib/catalog";
 import { formatData } from "@/lib/format";
 import { Link } from "react-router-dom";
@@ -10,7 +11,7 @@ import { Link } from "react-router-dom";
 export function BoSentinella() {
   const { profilo } = useAuth();
   const cat = useCatalog();
-  const filtri = { aziendaId: profilo?.ruolo === "regione" ? null : profilo?.azienda_id };
+  const filtri = filtriPerProfilo(profilo);
   const q = useQuery({ queryKey: ["sentinella", filtri], queryFn: () => fetchEventiSentinella(filtri) });
   const conteggi = new Map<number, number>();
   for (const e of q.data ?? []) conteggi.set(e.tipo_codice, (conteggi.get(e.tipo_codice) ?? 0) + 1);

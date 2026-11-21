@@ -6,13 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { fetchEventiSentinella, fetchFotografie, fetchSegnalazioni, fetchSinistri } from "@/lib/queries";
 import { useAuth } from "@/lib/auth";
+import { filtriPerProfilo } from "@/lib/ambito";
 import { formatEuro, sommaMovimenti } from "@/lib/format";
 import { StatoBadge } from "@/components/StatoBadge";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 export function BoDashboard() {
   const { profilo } = useAuth();
-  const filtri = { aziendaId: profilo?.ruolo === "regione" ? null : profilo?.azienda_id };
+  const filtri = filtriPerProfilo(profilo);
   const seg = useQuery({ queryKey: ["segnalazioni", filtri], queryFn: () => fetchSegnalazioni(filtri) });
   const sin = useQuery({ queryKey: ["sinistri", filtri], queryFn: () => fetchSinistri(filtri) });
   const fdr = useQuery({ queryKey: ["fdr", filtri], queryFn: () => fetchFotografie(filtri) });

@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { fetchSegnalazioni } from "@/lib/queries";
 import { useAuth } from "@/lib/auth";
+import { filtriPerProfilo } from "@/lib/ambito";
 import { Toaster } from "@/components/ui/sonner";
 
 const SEZIONI = [
@@ -15,9 +16,10 @@ const SEZIONI = [
 
 export function MobileShell() {
   const { profilo } = useAuth();
+  const filtri = filtriPerProfilo(profilo);
   const coda = useQuery({
-    queryKey: ["segnalazioni", "coda-badge", profilo?.azienda_id],
-    queryFn: () => fetchSegnalazioni({ aziendaId: profilo?.azienda_id }),
+    queryKey: ["segnalazioni", "coda-badge", filtri],
+    queryFn: () => fetchSegnalazioni(filtri),
     enabled: !!profilo,
   });
   const daPrendere = (coda.data ?? []).filter((s) => s.stato === "inviata").length;

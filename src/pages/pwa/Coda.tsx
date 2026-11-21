@@ -4,6 +4,7 @@ import { Intestazione } from "@/mobile/Intestazione";
 import { Caricamento, Scheda, Vuoto } from "@/mobile/atoms";
 import { fetchSegnalazioni } from "@/lib/queries";
 import { useAuth } from "@/lib/auth";
+import { filtriPerProfilo } from "@/lib/ambito";
 import { useCatalog } from "@/lib/catalog";
 import { formatData } from "@/lib/format";
 import { StatoBadge } from "@/components/StatoBadge";
@@ -14,23 +15,19 @@ export function PwaCoda() {
   const { profilo } = useAuth();
   const cat = useCatalog();
   const [filtro, setFiltro] = useState("tutte");
+  const filtri = filtriPerProfilo(profilo);
   const q = useQuery({
-    queryKey: ["segnalazioni", { aziendaId: profilo?.azienda_id }],
-    queryFn: () => fetchSegnalazioni({ aziendaId: profilo?.azienda_id }),
+    queryKey: ["segnalazioni", filtri],
+    queryFn: () => fetchSegnalazioni(filtri),
   });
 
   if (q.isLoading) return <Caricamento />;
   let lista = q.data ?? [];
-  if (profilo?.ruolo === "operatore") {
-    lista = lista.filter(
-      (s) => s.inserito_da === profilo.id || s.unita_operativa_id === cat.unita.find((u) => u.presidio_id === profilo.presidio_id)?.id,
-    );
-  }
   if (filtro !== "tutte") lista = lista.filter((s) => s.stato === filtro);
 
   return (
     <div className="flex flex-1 flex-col px-4 pb-4">
-      <Intestazione titolo="Coda segnalazioni" sottotitolo="Stato × anonima" />
+      <Intestazione titolo="Coda segnalazioni" sottotitolo="Filtra per stato" />
       <Tabs value={filtro} onValueChange={setFiltro} className="mb-3">
         <TabsList className="w-full">
           <TabsTrigger value="tutte">Tutte</TabsTrigger>

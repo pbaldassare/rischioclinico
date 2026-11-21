@@ -3,6 +3,7 @@ import { ClipboardPlus, FileWarning, HeartPulse, ShieldAlert } from "lucide-reac
 import { Intestazione } from "@/mobile/Intestazione";
 import { Scheda, TitoloSezione, Caricamento } from "@/mobile/atoms";
 import { useAuth } from "@/lib/auth";
+import { filtriPerProfilo } from "@/lib/ambito";
 import { ETICHETTE_RUOLO } from "@/lib/labels";
 import { useQuery } from "@tanstack/react-query";
 import { fetchFotografie, fetchSegnalazioni, fetchSinistri } from "@/lib/queries";
@@ -13,7 +14,7 @@ import { formatData } from "@/lib/format";
 export function PwaHome() {
   const { profilo } = useAuth();
   const cat = useCatalog();
-  const filtri = { aziendaId: profilo?.azienda_id };
+  const filtri = filtriPerProfilo(profilo);
   const seg = useQuery({ queryKey: ["segnalazioni", filtri], queryFn: () => fetchSegnalazioni(filtri) });
   const sin = useQuery({ queryKey: ["sinistri", filtri], queryFn: () => fetchSinistri(filtri) });
   const fdr = useQuery({ queryKey: ["fdr", filtri], queryFn: () => fetchFotografie(filtri) });
@@ -46,7 +47,7 @@ export function PwaHome() {
       <TitoloSezione>Moduli</TitoloSezione>
       <div className="mt-2 grid grid-cols-2 gap-2">
         <Modulo to="/app/coda" titolo="Segnalazioni" nota={`${lista.length} schede`} />
-        <Modulo to="/app/coda" titolo="FDR" nota={`${fdr.data?.length ?? 0} rilevazioni`} />
+        <Modulo to="/bo/fdr" titolo="FDR" nota={`${fdr.data?.length ?? 0} rilevazioni`} />
         <Modulo to="/bo/sinistri" titolo="Sinistri" nota="Apri backoffice" />
         <Modulo to="/bo" titolo="Pratiche legali" nota="In arrivo" />
       </div>

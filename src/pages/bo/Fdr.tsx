@@ -7,14 +7,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { fetchFotografie } from "@/lib/queries";
 import { useAuth } from "@/lib/auth";
+import { filtriPerProfilo } from "@/lib/ambito";
 import { formatData } from "@/lib/format";
 import type { FiltriAmbito as Filtri } from "@/lib/types";
 
 export function BoFdr() {
   const { profilo } = useAuth();
-  const [filtri, setFiltri] = useState<Filtri>({
-    aziendaId: profilo?.ruolo === "regione" ? null : profilo?.azienda_id,
-  });
+  const [filtri, setFiltri] = useState<Filtri>(() => filtriPerProfilo(profilo));
   const q = useQuery({ queryKey: ["fdr", filtri], queryFn: () => fetchFotografie(filtri) });
 
   return (

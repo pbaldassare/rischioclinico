@@ -139,6 +139,17 @@ export async function fetchSinistro(id: string) {
   return data as Sinistro | null;
 }
 
+export async function fetchSinistroDaSegnalazione(segnalazioneId: string) {
+  const { data, error } = await supabase
+    .from("sinistri")
+    .select("id, codice_interno")
+    .eq("segnalazione_id", segnalazioneId)
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data as { id: string; codice_interno: string | null } | null;
+}
+
 export async function fetchFotografie(filtri?: FiltriAmbito) {
   let q = supabase
     .from("fotografie_rischio")

@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Intestazione } from "@/mobile/Intestazione";
@@ -22,10 +22,25 @@ export function PwaNuova() {
     [cat.presidi, profilo],
   );
 
-  const [presidioId, setPresidioId] = useState(profilo?.presidio_id ?? presidi[0]?.id ?? "");
+  const [presidioId, setPresidioId] = useState("");
   const unita = cat.unita.filter((u) => u.presidio_id === presidioId);
-  const [unitaId, setUnitaId] = useState(unita[0]?.id ?? "");
-  const [dataOra, setDataOra] = useState(() => new Date().toISOString().slice(0, 16));
+  const [unitaId, setUnitaId] = useState("");
+
+  useEffect(() => {
+    const preferito = profilo?.presidio_id || presidi[0]?.id || "";
+    if (preferito && !presidi.some((p) => p.id === presidioId)) setPresidioId(preferito);
+  }, [profilo?.presidio_id, presidi, presidioId]);
+
+  useEffect(() => {
+    if (!presidioId) return;
+    const delPresidio = cat.unita.filter((u) => u.presidio_id === presidioId);
+    if (!delPresidio.length) return;
+    if (!delPresidio.some((u) => u.id === unitaId)) {
+      const ps = delPresidio.find((u) => /pronto/i.test(u.nome));
+      setUnitaId(ps?.id ?? delPresidio[0].id);
+    }
+  }, [presidioId, cat.unita, unitaId]);
+  const [dataOra, setDataOra] = useState(() => oraLocale());
   const [tipo, setTipo] = useState("caduta");
   const [gravita, setGravita] = useState("near_miss");
   const [magnitudo, setMagnitudo] = useState("nessuno");
@@ -91,11 +106,10 @@ export function PwaNuova() {
         </Campo>
         <Campo label="Presidio">
           <Select
-            value={presidioId}
+            value={presidioId || undefined}
             onValueChange={(v) => {
               setPresidioId(v);
-              const prima = cat.unita.find((u) => u.presidio_id === v);
-              setUnitaId(prima?.id ?? "");
+              setUnitaId("");
             }}
           >
             <SelectTrigger>
@@ -111,7 +125,7 @@ export function PwaNuova() {
           </Select>
         </Campo>
         <Campo label="Reparto / unità operativa">
-          <Select value={unitaId} onValueChange={setUnitaId}>
+          <Select value={unitaId || undefined} onValueChange={setUnitaId}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -182,6 +196,12 @@ export function PwaNuova() {
       </form>
     </div>
   );
+}
+
+function oraLocale() {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function Campo({ label, children }: { label: string; children: ReactNode }) {

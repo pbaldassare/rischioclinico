@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fetchSegnalazioni, rcaDi } from "@/lib/queries";
 import { useAuth } from "@/lib/auth";
+import { filtriPerProfilo } from "@/lib/ambito";
 import { useCatalog } from "@/lib/catalog";
 import { formatData } from "@/lib/format";
 import type { FiltriAmbito as Filtri } from "@/lib/types";
@@ -16,9 +17,7 @@ import { Label } from "@/components/ui/label";
 export function BoSegnalazioni() {
   const { profilo } = useAuth();
   const cat = useCatalog();
-  const [filtri, setFiltri] = useState<Filtri>({
-    aziendaId: profilo?.ruolo === "regione" ? null : profilo?.azienda_id,
-  });
+  const [filtri, setFiltri] = useState<Filtri>(() => filtriPerProfilo(profilo));
   const [stato, setStato] = useState("tutti");
   const [anonima, setAnonima] = useState("tutte");
   const q = useQuery({ queryKey: ["segnalazioni", filtri], queryFn: () => fetchSegnalazioni(filtri) });

@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { StatoBadge } from "@/components/StatoBadge";
 import { supabase } from "@/lib/supabase";
-import { rcaDi } from "@/lib/queries";
+import { fetchSinistroDaSegnalazione, rcaDi } from "@/lib/queries";
 import { useCatalog } from "@/lib/catalog";
 import { useAuth } from "@/lib/auth";
 import { formatData } from "@/lib/format";
@@ -28,6 +29,10 @@ export function FascicoloSegnalazione({
   const { profilo } = useAuth();
   const qc = useQueryClient();
   const rca = rcaDi(segnalazione);
+  const sinistroCollegato = useQuery({
+    queryKey: ["sinistro-da-segnalazione", segnalazione.id],
+    queryFn: () => fetchSinistroDaSegnalazione(segnalazione.id),
+  });
   const puoLavorare = ["referente_rischio", "amministratore", "direzione"].includes(profilo?.ruolo ?? "");
   const puoSinistri = ["amministrativo_sinistri", "referente_rischio", "amministratore"].includes(profilo?.ruolo ?? "");
 
@@ -129,8 +134,15 @@ export function FascicoloSegnalazione({
 
       <CalcoloRca segnalazione={segnalazione} rca={rca} puoLavorare={puoLavorare} compatto={compatto} />
       <Azioni segnalazione={segnalazione} puoLavorare={puoLavorare} compatto={compatto} />
-      {puoSinistri && segnalazione.stato !== "inviata" ? (
-        <ApriSinistro segnalazione={segnalazione} compatto={compatto} />
+      {sinistroCollegato.data ? (
+        <Link
+          to={`/bo/sinistri/${sinistroCollegato.data.id}`}
+          className="flex min-h-11 items-center justify-center rounded-full border border-border bg-card font-semibold"
+        >
+          Sinistro collegato {sinistroCollegato.data.codice_interno}
+        </Link>
+      ) : puoSinistri && segnalazione.stato !== "inviata" ? (
+        <ApriSinistro segnalazione={segnalazione} />
       ) : null}
     </div>
   );
@@ -161,6 +173,12 @@ function CalcoloRca({
   const [m, setM] = useState(String(rca?.m ?? "2"));
   const [r, setR] = useState(String(rca?.r ?? "2"));
   const [fattori, setFattori] = useState(rca?.fattori ?? "");
+  useEffect(() => {
+    setP(String(rca?.p ?? "2"));
+    setM(String(rca?.m ?? "2"));
+    setR(String(rca?.r ?? "2"));
+    setFattori(rca?.fattori ?? "");
+  }, [rca?.id, rca?.p, rca?.m, rca?.r, rca?.fattori]);
   const indice = Number(p) * Number(m) * Number(r);
 
   const salva = useMutation({
@@ -348,6 +366,7 @@ function ApriSinistro({ segnalazione }: { segnalazione: Segnalazione; compatto?:
     onSuccess: () => {
       toast.success("Sinistro aperto dalla segnalazione");
       qc.invalidateQueries({ queryKey: ["sinistri"] });
+      qc.invalidateQueries({ queryKey: ["sinistro-da-segnalazione", segnalazione.id] });
     },
     onError: (e: Error) => toast.error(e.message),
   });

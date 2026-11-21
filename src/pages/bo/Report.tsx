@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { KpiCard } from "@/components/KpiCard";
 import { fetchSegnalazioni, fetchSinistri } from "@/lib/queries";
 import { useAuth } from "@/lib/auth";
+import { filtriPerProfilo } from "@/lib/ambito";
 import { useCatalog } from "@/lib/catalog";
 import { formatEuro, sommaMovimenti } from "@/lib/format";
 import type { FiltriAmbito as Filtri } from "@/lib/types";
@@ -15,9 +16,7 @@ import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recha
 export function BoReport() {
   const { profilo } = useAuth();
   const cat = useCatalog();
-  const [filtri, setFiltri] = useState<Filtri>({
-    aziendaId: profilo?.ruolo === "regione" ? null : profilo?.azienda_id,
-  });
+  const [filtri, setFiltri] = useState<Filtri>(() => filtriPerProfilo(profilo));
   const seg = useQuery({ queryKey: ["segnalazioni", filtri], queryFn: () => fetchSegnalazioni(filtri) });
   const sin = useQuery({ queryKey: ["sinistri", filtri], queryFn: () => fetchSinistri(filtri) });
 
