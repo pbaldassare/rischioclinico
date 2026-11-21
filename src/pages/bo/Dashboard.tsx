@@ -64,7 +64,7 @@ export function BoDashboard() {
             <Modulo to="/bo/segnalazioni" titolo="Segnalazioni" testo="Coda, RCA, azioni" />
             <Modulo to="/bo/fdr" titolo="Fotografia del rischio" testo="Checklist per struttura" />
             <Modulo to="/bo/sinistri" titolo="Sinistri" testo="Denunce e importi" />
-            <Modulo to="/bo/legale" titolo="Pratiche legali" testo="In arrivo — sola consultazione" />
+            <Modulo to="/bo/legale" titolo="Pratiche legali" testo="Cause collegate ai sinistri" />
           </CardContent>
         </Card>
       </div>

@@ -57,6 +57,19 @@ export const ETICHETTE_R = {
   3: "Difficilmente rilevabile",
 } as const;
 
+export const ETICHETTE_STATO_PRATICA: Record<string, string> = {
+  aperta: "Aperta",
+  primo_grado: "Primo grado",
+  appello: "Appello",
+  chiusa: "Chiusa",
+};
+
+export const ETICHETTE_SOCCOMBENZA: Record<string, string> = {
+  basso: "Basso",
+  medio: "Medio",
+  alto: "Alto",
+};
+
 export function etichetta(mappa: Record<string, string>, codice?: string | null) {
   if (!codice) return "—";
   return mappa[codice] ?? codice.replaceAll("_", " ");

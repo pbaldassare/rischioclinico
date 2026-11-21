@@ -10,7 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { StatoBadge } from "@/components/StatoBadge";
 import { supabase } from "@/lib/supabase";
-import { fetchSinistroDaSegnalazione, rcaDi } from "@/lib/queries";
+import { fetchAllegati, fetchSinistroDaSegnalazione, rcaDi } from "@/lib/queries";
+import { caricaAllegati, urlFirmato } from "@/lib/allegati";
+import { AssistenteBozza } from "@/components/AssistenteBozza";
 import { useCatalog } from "@/lib/catalog";
 import { useAuth } from "@/lib/auth";
 import { formatData } from "@/lib/format";
@@ -132,6 +134,7 @@ export function FascicoloSegnalazione({
         </CardContent>
       </Wrap>
 
+      <AllegatiSegnalazione segnalazioneId={segnalazione.id} puoCaricare={puoLavorare || profilo?.ruolo === "operatore"} />
       <CalcoloRca segnalazione={segnalazione} rca={rca} puoLavorare={puoLavorare} compatto={compatto} />
       <Azioni segnalazione={segnalazione} puoLavorare={puoLavorare} compatto={compatto} />
       {sinistroCollegato.data ? (
@@ -228,9 +231,21 @@ function CalcoloRca({
           <Textarea value={fattori} onChange={(e) => setFattori(e.target.value)} disabled={!puoLavorare} />
         </div>
         {puoLavorare ? (
-          <Button className="w-full" onClick={() => salva.mutate()} disabled={salva.isPending}>
-            Esegui
-          </Button>
+          <>
+            <AssistenteBozza
+              tipo="rca"
+              contesto={{ dinamica: segnalazione.dinamica, impatto: segnalazione.impatto }}
+              onUsa={(b) => {
+                if (b.p) setP(String(b.p));
+                if (b.m) setM(String(b.m));
+                if (b.r) setR(String(b.r));
+                if (b.fattori) setFattori(b.fattori);
+              }}
+            />
+            <Button className="w-full" onClick={() => salva.mutate()} disabled={salva.isPending}>
+              Esegui
+            </Button>
+          </>
         ) : null}
       </CardContent>
     </Card>
@@ -375,5 +390,68 @@ function ApriSinistro({ segnalazione }: { segnalazione: Segnalazione; compatto?:
     <Button variant="secondary" className="w-full" onClick={() => apri.mutate()} disabled={apri.isPending}>
       Apri sinistro collegato
     </Button>
+  );
+}
+
+function AllegatiSegnalazione({ segnalazioneId, puoCaricare }: { segnalazioneId: string; puoCaricare: boolean }) {
+  const qc = useQueryClient();
+  const q = useQuery({
+    queryKey: ["allegati", segnalazioneId],
+    queryFn: () => fetchAllegati(segnalazioneId),
+  });
+  const [urls, setUrls] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let vivo = true;
+    void (async () => {
+      const next: Record<string, string> = {};
+      for (const a of q.data ?? []) {
+        if (!a.url) continue;
+        const u = await urlFirmato(a.url);
+        if (u) next[a.id] = u;
+      }
+      if (vivo) setUrls(next);
+    })();
+    return () => {
+      vivo = false;
+    };
+  }, [q.data]);
+
+  async function onFile(lista: FileList | null) {
+    if (!lista?.length) return;
+    try {
+      await caricaAllegati(segnalazioneId, [...lista]);
+      toast.success("Allegato caricato");
+      void qc.invalidateQueries({ queryKey: ["allegati", segnalazioneId] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Caricamento non riuscito");
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-xl">Allegati</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {(q.data ?? []).length === 0 ? <p className="text-sm text-muted-foreground">Nessun file.</p> : null}
+        <ul className="space-y-2">
+          {(q.data ?? []).map((a) => (
+            <li key={a.id}>
+              {urls[a.id] ? (
+                <a className="text-sm font-semibold text-primary" href={urls[a.id]} target="_blank" rel="noreferrer">
+                  {a.nome_file}
+                </a>
+              ) : (
+                <span className="text-sm">{a.nome_file}</span>
+              )}
+            </li>
+          ))}
+        </ul>
+        {puoCaricare ? (
+          <Input type="file" accept="image/*,application/pdf" onChange={(e) => void onFile(e.target.files)} />
+        ) : null}
+      </CardContent>
+    </Card>
   );
 }

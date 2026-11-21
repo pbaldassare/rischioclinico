@@ -1,15 +1,42 @@
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { Marchio } from "@/components/Marchio";
 import { useAuth } from "@/lib/auth";
-import { ETICHETTE_RUOLO } from "@/lib/labels";
-import { cn } from "@/lib/utils";
 import { Caricamento } from "@/mobile/atoms";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+
+const DEMO = [
+  "operatore.ps@demo.asl",
+  "referente@demo.asl",
+  "sinistri@demo.asl",
+  "direzione@demo.asl",
+  "regione@demo.asl",
+  "broker@demo.asl",
+  "admin@demo.asl",
+];
 
 export function Login() {
-  const { profili, caricamento, entra, homeDopoLogin } = useAuth();
-  const navigate = useNavigate();
+  const { caricamento, accedi } = useAuth();
+  const [email, setEmail] = useState("operatore.ps@demo.asl");
+  const [password, setPassword] = useState("");
+  const [errore, setErrore] = useState("");
+  const [invio, setInvio] = useState(false);
 
-  if (caricamento) return <Caricamento etichetta="Carico i profili demo…" />;
+  if (caricamento) return <Caricamento etichetta="Verifico la sessione…" />;
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setErrore("");
+    setInvio(true);
+    try {
+      await accedi(email, password);
+    } catch (err) {
+      setErrore(err instanceof Error ? err.message : "Accesso non riuscito");
+    } finally {
+      setInvio(false);
+    }
+  }
 
   return (
     <div className="relative min-h-[100dvh] overflow-hidden bg-background">
@@ -22,36 +49,52 @@ export function Login() {
           <Marchio grande sottotitolo="Piattaforma rischio clinico-assicurativo" />
         </div>
 
-        <div className="rounded-3xl border-2 border-border bg-card/80 p-6 shadow-2xl backdrop-blur-xl">
+        <form
+          onSubmit={(e) => void onSubmit(e)}
+          className="space-y-4 rounded-3xl border-2 border-border bg-card/80 p-6 shadow-2xl backdrop-blur-xl"
+        >
           <p className="text-sm text-muted-foreground">
-            Accesso demo: gli utenti Auth non sono ancora collegati. Scegli un profilo (niente password). Il secondo
-            fattore arriverà con il login reale.
+            Accesso con email e password su Supabase Auth, collegato a <code>rischio_clinico.profiles</code>. Il
+            secondo fattore non è ancora attivo.
           </p>
-          <ul className="mt-4 space-y-2">
-            {profili.map((p) => (
-              <li key={p.id}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    entra(p.id);
-                    navigate(homeDopoLogin(p));
-                  }}
-                  className={cn(
-                    "flex min-h-11 w-full items-center justify-between gap-3 rounded-[19px] border border-border bg-card px-4 py-3 text-left shadow-card transition-all duration-300 ease-smooth hover:shadow-lg",
-                  )}
-                >
-                  <span>
-                    <span className="block font-display text-sm font-bold">{p.nome}</span>
-                    <span className="block text-xs text-muted-foreground">{p.email}</span>
-                  </span>
-                  <span className="rounded-full bg-primary/10 px-3 py-1 text-[10.5px] font-bold text-primary">
-                    {ETICHETTE_RUOLO[p.ruolo]}
-                  </span>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              autoComplete="username"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          {errore ? <p className="text-sm text-destructive">{errore}</p> : null}
+          <Button type="submit" className="w-full" disabled={invio}>
+            {invio ? "Accesso…" : "Entra"}
+          </Button>
+          <p className="text-[10.5px] text-muted-foreground">Utenti demo ASP Messina:</p>
+          <ul className="text-[10.5px] text-muted-foreground">
+            {DEMO.map((d) => (
+              <li key={d}>
+                <button type="button" className="underline-offset-2 hover:underline" onClick={() => setEmail(d)}>
+                  {d}
                 </button>
               </li>
             ))}
           </ul>
-        </div>
+          <p className="text-[10.5px] text-muted-foreground">Password unica demo: DemoRischio2026!</p>
+        </form>
       </div>
     </div>
   );

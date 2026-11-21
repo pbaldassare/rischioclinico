@@ -12,6 +12,7 @@ import { formatEuro, sommaMovimenti } from "@/lib/format";
 import type { FiltriAmbito as Filtri } from "@/lib/types";
 import { BarChart3, Landmark } from "lucide-react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { AssistenteBozza } from "@/components/AssistenteBozza";
 
 export function BoReport() {
   const { profilo } = useAuth();
@@ -45,6 +46,7 @@ export function BoReport() {
   }, [sin.data, cat.fasce]);
 
   const risLiq = (sin.data ?? []).reduce((a, s) => a + sommaMovimenti(s.movimenti, ["riservato", "liquidato"]), 0);
+  const [sintesi, setSintesi] = useState("");
 
   return (
     <div className="space-y-4">
@@ -57,6 +59,22 @@ export function BoReport() {
         <KpiCard icon={Landmark} titolo="Sinistri" valore={sin.data?.length ?? 0} />
         <KpiCard icon={Landmark} titolo="RIS+LIQ" valore={formatEuro(risLiq)} tinta="text-accent" />
       </div>
+      <AssistenteBozza
+        tipo="report"
+        contesto={{ livello, segnalazioni: seg.data?.length ?? 0, sinistri: sin.data?.length ?? 0, risLiq: formatEuro(risLiq) }}
+        onUsa={(b) => setSintesi(b.testo)}
+      />
+      {sintesi ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl">Sintesi assistente</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm leading-relaxed">{sintesi}</p>
+            <p className="mt-2 text-[10.5px] text-muted-foreground">Solo consultazione: non è stata scritta in archivio.</p>
+          </CardContent>
+        </Card>
+      ) : null}
       <Card>
         <CardHeader>
           <CardTitle className="text-xl">Sinistri per presidio</CardTitle>

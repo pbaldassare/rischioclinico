@@ -19,6 +19,7 @@ import { BoFdrDettaglio } from "@/pages/bo/FdrDettaglio";
 import { BoReport } from "@/pages/bo/Report";
 import { BoSentinella } from "@/pages/bo/Sentinella";
 import { BoLegale } from "@/pages/bo/Legale";
+import { BoLegaleDettaglio } from "@/pages/bo/LegaleDettaglio";
 import { Caricamento } from "@/mobile/atoms";
 
 function RequireAuth() {
@@ -63,6 +64,7 @@ export default function App() {
             <Route path="report" element={<BoReport />} />
             <Route path="sentinella" element={<BoSentinella />} />
             <Route path="legale" element={<BoLegale />} />
+            <Route path="legale/:id" element={<BoLegaleDettaglio />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

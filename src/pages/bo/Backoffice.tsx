@@ -42,8 +42,7 @@ export function Backoffice() {
         onSeleziona={(id) => navigate(id)}
         email={profilo?.email}
         onEsci={() => {
-          esci();
-          navigate("/");
+          void esci().then(() => navigate("/"));
         }}
         etichettaEsci="Esci"
         titolo={titolo}

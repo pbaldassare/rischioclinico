@@ -13,7 +13,7 @@ export function PwaProfilo() {
 
   return (
     <div className="flex flex-1 flex-col px-4 pb-6">
-      <Intestazione titolo="Profilo" sottotitolo="Sessione demo" />
+      <Intestazione titolo="Profilo" sottotitolo="Sessione autenticata" />
       <Scheda className="p-4">
         <p className="font-display text-lg font-bold">{profilo?.nome}</p>
         <p className="text-sm text-muted-foreground">{profilo?.email}</p>
@@ -41,8 +41,7 @@ export function PwaProfilo() {
         variant="outline"
         className="mt-2 w-full"
         onClick={() => {
-          esci();
-          navigate("/");
+          void esci().then(() => navigate("/"));
         }}
       >
         Esci

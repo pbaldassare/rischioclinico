@@ -1,6 +1,6 @@
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { fetchSinistro } from "@/lib/queries";
+import { fetchPraticaDaSinistro, fetchSinistro } from "@/lib/queries";
 import { Caricamento, Vuoto } from "@/mobile/atoms";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatoBadge } from "@/components/StatoBadge";
@@ -13,6 +13,11 @@ export function BoSinistroDettaglio() {
   const { id } = useParams();
   const cat = useCatalog();
   const q = useQuery({ queryKey: ["sinistro", id], queryFn: () => fetchSinistro(id!), enabled: !!id });
+  const pratica = useQuery({
+    queryKey: ["pratica-da-sinistro", id],
+    queryFn: () => fetchPraticaDaSinistro(id!),
+    enabled: !!id,
+  });
   if (q.isLoading) return <Caricamento />;
   if (!q.data) return <Vuoto titolo="Non trovato" testo="Sinistro assente." />;
   const s = q.data;
@@ -56,6 +61,13 @@ export function BoSinistroDettaglio() {
           ) : (
             <p className="text-muted-foreground">Nessuna segnalazione collegata</p>
           )}
+          {pratica.data ? (
+            <p>
+              <Link className="font-semibold text-primary" to={`/bo/legale/${pratica.data.id}`}>
+                Pratica legale {pratica.data.numero_pratica}
+              </Link>
+            </p>
+          ) : null}
         </CardContent>
       </Card>
       <Card>

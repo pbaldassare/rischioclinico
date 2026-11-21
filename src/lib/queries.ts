@@ -2,10 +2,12 @@ import { supabase } from "./supabase";
 import type {
   Azienda,
   Classificazione,
+  Allegato,
   EventoSentinella,
   FasciaImporto,
   FiltriAmbito,
   FotografiaRischio,
+  PraticaLegale,
   Presidio,
   Profile,
   Segnalazione,
@@ -31,14 +33,14 @@ const SINISTRO_SELECT = `
   movimenti:movimenti_economici(*)
 `;
 
-export async function fetchProfiles() {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("attivo", true)
-    .order("nome");
-  if (error) throw error;
-  return (data ?? []) as Profile[];
+export async function fetchProfile(id: string, email?: string | null) {
+  const byId = await supabase.from("profiles").select("*").eq("id", id).maybeSingle();
+  if (byId.error) throw byId.error;
+  if (byId.data) return byId.data as Profile;
+  if (!email) return null;
+  const byEmail = await supabase.from("profiles").select("*").eq("email", email).maybeSingle();
+  if (byEmail.error) throw byEmail.error;
+  return (byEmail.data as Profile) ?? null;
 }
 
 export async function fetchAziende() {
@@ -218,4 +220,44 @@ export function rcaDi(s: Segnalazione) {
   const rca = s.rca;
   if (!rca) return null;
   return Array.isArray(rca) ? rca[0] ?? null : rca;
+}
+
+export async function fetchAllegati(segnalazioneId: string) {
+  const { data, error } = await supabase
+    .from("allegati")
+    .select("*")
+    .eq("segnalazione_id", segnalazioneId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as Allegato[];
+}
+
+export async function fetchPratiche() {
+  const { data, error } = await supabase
+    .from("pratiche_legali")
+    .select("*, sinistro:sinistri(id,codice_interno,presidio_id)")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as PraticaLegale[];
+}
+
+export async function fetchPratica(id: string) {
+  const { data, error } = await supabase
+    .from("pratiche_legali")
+    .select("*, sinistro:sinistri(id,codice_interno,presidio_id)")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data as PraticaLegale | null;
+}
+
+export async function fetchPraticaDaSinistro(sinistroId: string) {
+  const { data, error } = await supabase
+    .from("pratiche_legali")
+    .select("id, numero_pratica, stato")
+    .eq("sinistro_id", sinistroId)
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data as { id: string; numero_pratica: string | null; stato: string } | null;
 }

@@ -49,7 +49,7 @@ export function PwaHome() {
         <Modulo to="/app/coda" titolo="Segnalazioni" nota={`${lista.length} schede`} />
         <Modulo to="/bo/fdr" titolo="FDR" nota={`${fdr.data?.length ?? 0} rilevazioni`} />
         <Modulo to="/bo/sinistri" titolo="Sinistri" nota="Apri backoffice" />
-        <Modulo to="/bo" titolo="Pratiche legali" nota="In arrivo" />
+        <Modulo to="/bo/legale" titolo="Pratiche legali" nota="Consultazione" />
       </div>
 
       <TitoloSezione>Ultime segnalazioni</TitoloSezione>

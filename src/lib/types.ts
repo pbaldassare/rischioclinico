@@ -207,3 +207,27 @@ export interface FiltriAmbito {
   unitaId?: string | null;
   anno?: string | null;
 }
+
+export interface Allegato {
+  id: string;
+  segnalazione_id: string | null;
+  nome_file: string | null;
+  url: string | null;
+  created_at: string;
+}
+
+export interface PraticaLegale {
+  id: string;
+  sinistro_id: string;
+  numero_pratica: string | null;
+  foro: string | null;
+  data_iscrizione: string | null;
+  stato: string;
+  rischio_soccombenza_codice: string | null;
+  importo_preteso: number | null;
+  importo_transatto: number | null;
+  importo_liquidato: number | null;
+  prossima_scadenza: string | null;
+  created_at: string;
+  sinistro?: { id: string; codice_interno: string | null; presidio_id: string | null } | null;
+}

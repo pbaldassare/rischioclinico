@@ -11,6 +11,8 @@ import { useCatalog } from "@/lib/catalog";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
+import { AssistenteBozza } from "@/components/AssistenteBozza";
+import { caricaAllegati } from "@/lib/allegati";
 
 export function PwaNuova() {
   const cat = useCatalog();
@@ -52,6 +54,7 @@ export function PwaNuova() {
   const [dinamica, setDinamica] = useState("");
   const [impatto, setImpatto] = useState("");
   const [invio, setInvio] = useState(false);
+  const [fileAllegati, setFileAllegati] = useState<File[]>([]);
 
   async function invia() {
     if (!dinamica.trim()) {
@@ -81,14 +84,23 @@ export function PwaNuova() {
       })
       .select("id")
       .single();
-    setInvio(false);
-    if (error) {
-      toast.error(error.message);
+    if (error || !data) {
+      setInvio(false);
+      toast.error(error?.message ?? "Invio non riuscito");
       return;
     }
-    toast.success("Segnalazione inviata");
-    qc.invalidateQueries({ queryKey: ["segnalazioni"] });
-    navigate(`/app/coda/${data.id}`);
+    try {
+      if (fileAllegati.length) await caricaAllegati(data.id, fileAllegati);
+      toast.success("Segnalazione inviata");
+      qc.invalidateQueries({ queryKey: ["segnalazioni"] });
+      qc.invalidateQueries({ queryKey: ["allegati", data.id] });
+      navigate(`/app/coda/${data.id}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Scheda salvata, allegati non caricati");
+      navigate(`/app/coda/${data.id}`);
+    } finally {
+      setInvio(false);
+    }
   }
 
   return (
@@ -177,15 +189,31 @@ export function PwaNuova() {
             </Select>
           </Campo>
         ) : null}
+        <AssistenteBozza
+          tipo="segnalazione"
+          conVoce
+          conFoto
+          onUsa={(b) => setDinamica(b.testo)}
+        />
         <Campo label="Dinamica">
           <Textarea value={dinamica} onChange={(e) => setDinamica(e.target.value)} required />
         </Campo>
         <Campo label="Impatto (facoltativo)">
           <Textarea value={impatto} onChange={(e) => setImpatto(e.target.value)} />
         </Campo>
-        <p className="text-[10.5px] text-muted-foreground">
-          Allegati fotografici: in arrivo. Per ora la scheda si salva senza file.
-        </p>
+        <Campo label="Allegati (foto, PDF)">
+          <Input
+            type="file"
+            accept="image/*,application/pdf"
+            multiple
+            onChange={(e) => setFileAllegati([...(e.target.files ?? [])])}
+          />
+          {fileAllegati.length ? (
+            <p className="text-[10.5px] text-muted-foreground">{fileAllegati.length} file pronti all’invio</p>
+          ) : (
+            <p className="text-[10.5px] text-muted-foreground">Si caricano solo quando confermi Invia segnalazione.</p>
+          )}
+        </Campo>
         <button
           type="submit"
           disabled={invio}
