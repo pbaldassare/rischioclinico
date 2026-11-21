@@ -30,6 +30,8 @@ OPENAI_API_KEY=<opzionale, solo server /api/assistente>
 
 Senza `OPENAI_API_KEY` l’assistente usa una bozza locale. Lo schema Postgres è `rischio_clinico` (non `public`). Il client lo imposta con `createClient(url, key, { db: { schema: 'rischio_clinico' } })`.
 
+I dati demo sono inventati (`supabase/seed.sql`): ASL Nord e ASL Costa, ospedali e casi 2026. Non usano numeri o presidi reali. In `docs/sources/` resta un archivio di supporto ai report, non è l’azienda della demo.
+
 ## Accesso demo
 
 Login reale su Supabase Auth (email + password). Gli utenti coincidono con `rischio_clinico.profiles.id`. Password unica: `DemoRischio2026!`
@@ -37,9 +39,10 @@ Login reale su Supabase Auth (email + password). Gli utenti coincidono con `risc
 | Email | Livello | Entrata |
 | --- | --- | --- |
 | admin@demo.asl | Admin | `/bo` — crea ASL e ospedali, tutte le statistiche, richieste e sinistri |
-| referente@demo.asl | ASL / presidio (ASP Messina) | `/bo` — solo Messina: reparti, operatori, sue stats |
-| sinistri@demo.asl | ASL / presidio (AO Papardo) | `/bo` — solo Papardo |
-| operatore.ps@demo.asl | Operatore | `/app` — PWA sul Pronto soccorso Taormina, con i privilegi dati dall’ASL |
+| nord@demo.asl | ASL / presidio (ASL Nord) | `/bo` — solo ASL Nord: reparti, operatori, sue stats |
+| costa@demo.asl | ASL / presidio (ASL Costa) | `/bo` — solo ASL Costa |
+| operatore.nord@demo.asl | Operatore | `/app` — PWA sul Pronto soccorso Collina |
+| operatore.costa@demo.asl | Operatore | `/app` — PWA sul Pronto soccorso Litorale |
 
 I vecchi ruoli (referente, direzione, regione, broker, amministrativo sinistri) non sono più livelli di accesso.
 
