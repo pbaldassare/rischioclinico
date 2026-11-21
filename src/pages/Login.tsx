@@ -5,6 +5,8 @@ import { Caricamento } from "@/mobile/atoms";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { PulsanteInstalla } from "@/components/PulsanteInstalla";
+import { Link } from "react-router-dom";
 
 const DEMO = [
   "operatore.ps@demo.asl",
@@ -48,6 +50,13 @@ export function Login() {
         <div className="mb-8 flex justify-center">
           <Marchio grande sottotitolo="Piattaforma rischio clinico-assicurativo" />
         </div>
+
+        <PulsanteInstalla variante="login" />
+        <p className="mb-4 text-center text-[10.5px] text-muted-foreground">
+          <Link to="/installa" className="font-semibold text-primary underline-offset-4 hover:underline">
+            Pagina di installazione
+          </Link>
+        </p>
 
         <form
           onSubmit={(e) => void onSubmit(e)}

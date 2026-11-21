@@ -1,4 +1,5 @@
 {
+  "id": "/app",
   "name": "Rischio clinico",
   "short_name": "Rischio",
   "description": "Segnalazioni, FDR, sinistri ed eventi sentinella per le Aziende Sanitarie.",
@@ -7,9 +8,11 @@
   "start_url": "/app",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
   "background_color": "#F6F2EA",
   "theme_color": "#F6F2EA",
+  "prefer_related_applications": false,
   "categories": ["medical", "business", "productivity"],
   "icons": [
     {
@@ -29,6 +32,20 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nuova segnalazione",
+      "short_name": "Nuova",
+      "url": "/app/nuova",
+      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96", "type": "image/png" }]
+    },
+    {
+      "name": "Coda",
+      "short_name": "Coda",
+      "url": "/app/coda",
+      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96", "type": "image/png" }]
     }
   ]
 }
