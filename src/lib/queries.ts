@@ -309,6 +309,35 @@ export async function creaPresidio(input: {
   return data as Presidio;
 }
 
+export async function aggiornaAzienda(
+  id: string,
+  input: { nome: string; tipo: string; codice_sis: string | null; regione_codice: string | null },
+) {
+  const { error } = await supabase.from("aziende").update(input).eq("id", id);
+  if (error) throw error;
+}
+
+export async function aggiornaPresidio(
+  id: string,
+  input: { azienda_id: string; nome: string; codice_struttura: string | null; posti_letto: number | null },
+) {
+  const { error } = await supabase.from("presidi").update(input).eq("id", id);
+  if (error) throw error;
+}
+
+// Le FK sono RESTRICT: si elimina solo ciò che non ha dati collegati.
+async function elimina(tabella: "aziende" | "presidi", id: string, cosaCollegata: string) {
+  const { error } = await supabase.from(tabella).delete().eq("id", id);
+  if (error?.code === "23503") throw new Error(`Non si può eliminare: ha ancora ${cosaCollegata} collegati.`);
+  if (error) throw error;
+}
+
+export const eliminaAzienda = (id: string) =>
+  elimina("aziende", id, "ospedali, utenti, segnalazioni o sinistri");
+
+export const eliminaPresidio = (id: string) =>
+  elimina("presidi", id, "reparti, segnalazioni o sinistri");
+
 export async function creaReparto(input: { presidio_id: string; nome: string; codice_disciplina?: string }) {
   const { data, error } = await supabase
     .from("unita_operative")
