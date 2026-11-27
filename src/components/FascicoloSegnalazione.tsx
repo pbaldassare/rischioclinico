@@ -10,15 +10,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { StatoBadge } from "@/components/StatoBadge";
 import { supabase } from "@/lib/supabase";
-import { fetchAllegati, fetchSinistroDaSegnalazione, rcaDi } from "@/lib/queries";
+import { aggiornaAzione, fetchAllegati, fetchProfiliAzienda, fetchSinistroDaSegnalazione, rcaDi } from "@/lib/queries";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Campo, SelectElenco, SelectOpzioni, vuotoANull } from "@/components/Campi";
 import { caricaAllegati, urlFirmato } from "@/lib/allegati";
 import { AssistenteBozza } from "@/components/AssistenteBozza";
 import { useCatalog } from "@/lib/catalog";
 import { useAuth } from "@/lib/auth";
 import { eOperatore, puoGestireSinistri, puoLavorareSegnalazione } from "@/lib/livelli";
 import { formatData } from "@/lib/format";
-import { ETICHETTE_M, ETICHETTE_P, ETICHETTE_R } from "@/lib/labels";
-import type { Segnalazione } from "@/lib/types";
+import { ETICHETTE_M, ETICHETTE_P, ETICHETTE_R, ETICHETTE_STATO_AZIONE } from "@/lib/labels";
+import type { AzioneCorrettiva, Segnalazione } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export function FascicoloSegnalazione({
@@ -177,23 +179,32 @@ function CalcoloRca({
   const [m, setM] = useState(String(rca?.m ?? "2"));
   const [r, setR] = useState(String(rca?.r ?? "2"));
   const [fattori, setFattori] = useState(rca?.fattori ?? "");
+  const [cause, setCause] = useState<string[]>(rca?.cause ?? []);
+  const [metodo, setMetodo] = useState(rca?.metodo_codice ?? "rca");
+  const [noteAudit, setNoteAudit] = useState(rca?.note_audit ?? "");
+  const cat = useCatalog();
   useEffect(() => {
     setP(String(rca?.p ?? "2"));
     setM(String(rca?.m ?? "2"));
     setR(String(rca?.r ?? "2"));
     setFattori(rca?.fattori ?? "");
-  }, [rca?.id, rca?.p, rca?.m, rca?.r, rca?.fattori]);
+    setCause(rca?.cause ?? []);
+    setMetodo(rca?.metodo_codice ?? "rca");
+    setNoteAudit(rca?.note_audit ?? "");
+  }, [rca?.id, rca?.p, rca?.m, rca?.r, rca?.fattori, rca?.cause, rca?.metodo_codice, rca?.note_audit]);
   const indice = Number(p) * Number(m) * Number(r);
 
   const salva = useMutation({
     mutationFn: async () => {
       const payload = {
         segnalazione_id: segnalazione.id,
-        metodo_codice: "rca",
+        metodo_codice: metodo,
         p: Number(p),
         m: Number(m),
         r: Number(r),
         fattori,
+        cause,
+        note_audit: vuotoANull(noteAudit),
       };
       if (rca?.id) {
         const { error } = await supabase.from("analisi_rca").update(payload).eq("id", rca.id);
@@ -204,7 +215,7 @@ function CalcoloRca({
       }
     },
     onSuccess: () => {
-      toast.success("RCA confermata");
+      toast.success("Analisi salvata");
       qc.invalidateQueries({ queryKey: ["segnalazione", segnalazione.id] });
       qc.invalidateQueries({ queryKey: ["segnalazioni"] });
     },
@@ -214,10 +225,16 @@ function CalcoloRca({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-xl">Calcolo rischio (RCA)</CardTitle>
+        <CardTitle className="text-xl">Analisi delle cause e calcolo del rischio</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground">Indice = P × M × R (scala 1–3).</p>
+        <Campo label="Metodo">
+          <SelectElenco elenco="metodo_analisi" value={metodo} onChange={setMetodo} />
+        </Campo>
+        <p className="text-sm text-muted-foreground">
+          Indice = Probabilità × Magnitudo × Rilevabilità, ciascuna da 1 a 3: va da 1 (minimo) a 27 (massimo). Dopo la
+          verifica delle azioni correttive, rivaluta i tre valori per vedere il rischio residuo.
+        </p>
         <div className="grid gap-3 sm:grid-cols-3">
           <CampoScala label="Probabilità (P)" value={p} onChange={setP} mappa={ETICHETTE_P} disabled={!puoLavorare} />
           <CampoScala label="Magnitudo (M)" value={m} onChange={setM} mappa={ETICHETTE_M} disabled={!puoLavorare} />
@@ -228,9 +245,32 @@ function CalcoloRca({
           <p className="font-display text-4xl font-bold text-primary">{indice}</p>
         </div>
         <div className="space-y-2">
-          <Label>Fattori causali</Label>
+          <Label>Categorie di cause</Label>
+          <div className="flex flex-wrap gap-4 text-sm">
+            {cat.elenco("fattore_rca").map((c) => (
+              <label key={c.codice} className="flex items-center gap-2">
+                <Checkbox
+                  checked={cause.includes(c.codice)}
+                  disabled={!puoLavorare}
+                  onCheckedChange={(v) =>
+                    setCause((prev) => (v === true ? [...prev, c.codice] : prev.filter((x) => x !== c.codice)))
+                  }
+                />
+                {c.etichetta}
+              </label>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label>Fattori causali (dettaglio)</Label>
           <Textarea value={fattori} onChange={(e) => setFattori(e.target.value)} disabled={!puoLavorare} />
         </div>
+        {metodo === "audit" ? (
+          <div className="space-y-2">
+            <Label>Note dell’audit</Label>
+            <Textarea value={noteAudit} onChange={(e) => setNoteAudit(e.target.value)} disabled={!puoLavorare} />
+          </div>
+        ) : null}
         {puoLavorare ? (
           <>
             <AssistenteBozza
@@ -244,7 +284,7 @@ function CalcoloRca({
               }}
             />
             <Button className="w-full" onClick={() => salva.mutate()} disabled={salva.isPending}>
-              Esegui
+              Salva analisi
             </Button>
           </>
         ) : null}
@@ -296,7 +336,14 @@ function Azioni({
   const qc = useQueryClient();
   const [descrizione, setDescrizione] = useState("");
   const [scadenza, setScadenza] = useState("");
+  const [responsabile, setResponsabile] = useState("");
   const azioni = segnalazione.azioni ?? [];
+  const persone = useQuery({
+    queryKey: ["profili-azienda", segnalazione.azienda_id],
+    queryFn: () => fetchProfiliAzienda(segnalazione.azienda_id),
+    enabled: puoLavorare,
+  });
+  const opzioniPersone = (persone.data ?? []).map((p) => [p.id, p.nome ?? p.email ?? "—"] as [string, string]);
 
   const aggiungi = useMutation({
     mutationFn: async () => {
@@ -304,6 +351,7 @@ function Azioni({
         segnalazione_id: segnalazione.id,
         descrizione,
         scadenza: scadenza || null,
+        responsabile_id: responsabile || null,
         stato: "aperta",
       });
       if (error) throw error;
@@ -312,6 +360,7 @@ function Azioni({
       toast.success("Azione aggiunta");
       setDescrizione("");
       setScadenza("");
+      setResponsabile("");
       qc.invalidateQueries({ queryKey: ["segnalazione", segnalazione.id] });
       qc.invalidateQueries({ queryKey: ["segnalazioni"] });
     },
@@ -326,19 +375,26 @@ function Azioni({
       <CardContent className="space-y-3">
         {azioni.length === 0 ? <p className="text-sm text-muted-foreground">Nessuna azione ancora.</p> : null}
         {azioni.map((a) => (
-          <div key={a.id} className="rounded-[19px] border border-border bg-card p-3 shadow-card">
-            <p className="text-sm font-semibold">{a.descrizione}</p>
-            <p className="text-xs text-muted-foreground">
-              {a.stato.replaceAll("_", " ")}
-              {a.scadenza ? ` · scadenza ${formatData(a.scadenza)}` : ""}
-            </p>
-          </div>
+          <SchedaAzione
+            key={a.id}
+            azione={a}
+            segnalazioneId={segnalazione.id}
+            puoLavorare={puoLavorare}
+            persone={opzioniPersone}
+          />
         ))}
         {puoLavorare ? (
           <div className="space-y-2 pt-2">
             <Label>Nuova azione</Label>
             <Textarea value={descrizione} onChange={(e) => setDescrizione(e.target.value)} />
-            <Input type="date" value={scadenza} onChange={(e) => setScadenza(e.target.value)} />
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Campo label="Responsabile">
+                <SelectOpzioni value={responsabile} onChange={setResponsabile} opzioni={opzioniPersone} vuoto="— Da assegnare —" />
+              </Campo>
+              <Campo label="Scadenza">
+                <Input type="date" value={scadenza} onChange={(e) => setScadenza(e.target.value)} />
+              </Campo>
+            </div>
             <Button
               variant="outline"
               className="w-full"
@@ -353,6 +409,107 @@ function Azioni({
     </Card>
   );
 }
+
+const ESITI_VERIFICA: [string, string][] = [
+  ["efficace", "Efficace"],
+  ["parzialmente_efficace", "Parzialmente efficace"],
+  ["non_efficace", "Non efficace"],
+];
+
+function SchedaAzione({
+  azione,
+  segnalazioneId,
+  puoLavorare,
+  persone,
+}: {
+  azione: AzioneCorrettiva;
+  segnalazioneId: string;
+  puoLavorare: boolean;
+  persone: [string, string][];
+}) {
+  const qc = useQueryClient();
+  const scaduta = azione.scadenza && azione.stato !== "verificata" && azione.scadenza < new Date().toISOString().slice(0, 10);
+  const nomeResponsabile = persone.find(([id]) => id === azione.responsabile_id)?.[1];
+  const aggiorna = useMutation({
+    mutationFn: (input: Parameters<typeof aggiornaAzione>[1]) => aggiornaAzione(azione.id, input),
+    onSuccess: () => {
+      toast.success("Azione aggiornata");
+      qc.invalidateQueries({ queryKey: ["segnalazione", segnalazioneId] });
+      qc.invalidateQueries({ queryKey: ["segnalazioni"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <div className="space-y-3 rounded-[19px] border border-border bg-card p-3 shadow-card">
+      <div>
+        <p className="text-sm font-semibold">{azione.descrizione}</p>
+        <p className={cn("text-xs text-muted-foreground", scaduta && "font-semibold text-destructive")}>
+          {ETICHETTE_STATO_AZIONE[azione.stato] ?? azione.stato}
+          {azione.scadenza ? ` · scadenza ${formatData(azione.scadenza)}${scaduta ? " (scaduta)" : ""}` : ""}
+          {nomeResponsabile ? ` · ${nomeResponsabile}` : ""}
+          {azione.esito_verifica
+            ? ` · verifica: ${ESITI_VERIFICA.find(([c]) => c === azione.esito_verifica)?.[1] ?? azione.esito_verifica}`
+            : ""}
+        </p>
+      </div>
+      {puoLavorare ? (
+        <div className="grid gap-2 sm:grid-cols-3">
+          <Campo label="Responsabile">
+            <SelectOpzioni
+              value={azione.responsabile_id ?? ""}
+              onChange={(v) => aggiorna.mutate({ responsabile_id: v || null })}
+              opzioni={persone}
+              vuoto="— Da assegnare —"
+            />
+          </Campo>
+          <Campo label="Stato">
+            <SelectOpzioni
+              value={azione.stato}
+              onChange={(v) =>
+                aggiorna.mutate(
+                  v === "verificata" ? { stato: v } : { stato: v, verificata_il: null, esito_verifica: null },
+                )
+              }
+              opzioni={Object.entries(ETICHETTE_STATO_AZIONE)}
+            />
+          </Campo>
+          {azione.stato === "verificata" ? (
+            <Campo label="Esito della verifica">
+              <SelectOpzioni
+                value={azione.esito_verifica ?? ""}
+                onChange={(v) =>
+                  aggiorna.mutate({ esito_verifica: v || null, verificata_il: v ? new Date().toISOString().slice(0, 10) : null })
+                }
+                opzioni={ESITI_VERIFICA}
+                vuoto="—"
+              />
+            </Campo>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+// Tipo di evento della segnalazione -> classificazione del sinistro (le voci non elencate diventano "altro").
+const TIPO_SINISTRO_DA_EVENTO: Record<string, string> = {
+  caduta: "caduta",
+  violenza_paziente: "aggressione",
+  violenza_operatore: "aggressione",
+  infezione: "infezione",
+  procedura_chirurgica: "chirurgico",
+  lista_operatoria: "chirurgico",
+  diagnosi: "diagnostico",
+  procedura_diagnostica: "diagnostico",
+  campioni: "diagnostico",
+  gestione_farmaco: "terapeutico",
+  procedura_terapeutica: "terapeutico",
+  chemioterapia: "terapeutico",
+  sangue: "terapeutico",
+  anestesia: "anestesiologico",
+  suicidio: "autolesione",
+};
 
 function ApriSinistro({ segnalazione }: { segnalazione: Segnalazione; compatto?: boolean }) {
   const qc = useQueryClient();
@@ -372,7 +529,7 @@ function ApriSinistro({ segnalazione }: { segnalazione: Segnalazione; compatto?:
         data_evento: segnalazione.data_ora_evento?.slice(0, 10) ?? null,
         data_apertura: new Date().toISOString().slice(0, 10),
         sentinella: segnalazione.sentinella,
-        tipo_sinistro_codice: segnalazione.tipo_evento_codice === "caduta" ? "caduta" : "altro",
+        tipo_sinistro_codice: TIPO_SINISTRO_DA_EVENTO[segnalazione.tipo_evento_codice ?? ""] ?? "altro",
         fase_cura_codice: segnalazione.fase_cura_codice,
         stato: "aperto",
         codice_interno: `SIN-${new Date().getFullYear()}-${Math.floor(Math.random() * 900 + 100)}`,

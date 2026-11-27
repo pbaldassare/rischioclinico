@@ -12,6 +12,7 @@ import { useCatalog } from "@/lib/catalog";
 import { useAuth } from "@/lib/auth";
 import { ePresidio } from "@/lib/livelli";
 import { creaReparto } from "@/lib/queries";
+import { AttivitaOspedale } from "@/components/AttivitaOspedale";
 
 export function BoReparti() {
   const { profilo } = useAuth();
@@ -37,6 +38,24 @@ export function BoReparti() {
       <p className="text-sm text-muted-foreground">
         L’ASL crea i reparti dei propri ospedali e poi assegna gli operatori con i privilegi.
       </p>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl">Ospedali</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul className="divide-y divide-border text-sm">
+            {cat.presidi.map((p) => (
+              <li key={p.id} className="flex items-center justify-between gap-3 py-2">
+                <span>
+                  {p.nome}
+                  {p.posti_letto ? ` · ${p.posti_letto} posti letto` : ""}
+                </span>
+                <AttivitaOspedale presidio={p} />
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader>
           <CardTitle className="text-xl">Reparti</CardTitle>

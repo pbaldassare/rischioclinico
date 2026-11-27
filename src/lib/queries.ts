@@ -1,5 +1,7 @@
 import { supabase } from "./supabase";
 import type {
+  AttivitaPresidio,
+  AzioneCorrettiva,
   Azienda,
   Classificazione,
   Allegato,
@@ -405,4 +407,130 @@ export async function creaUtentePiattaforma(input: {
   const body = data as { error?: string; user_id?: string; message?: string } | null;
   if (body?.error) throw new Error(body.error);
   return body;
+}
+
+type CampiSinistro = Omit<Sinistro, "id" | "created_at" | "presidio" | "unita" | "movimenti" | "segnalazione_id" | "data_apertura">;
+
+/** Crea (id null) o aggiorna un sinistro; restituisce l'id. */
+export async function salvaSinistro(id: string | null, input: CampiSinistro) {
+  if (id) {
+    const { error } = await supabase.from("sinistri").update(input).eq("id", id);
+    if (error) throw error;
+    return id;
+  }
+  const { data, error } = await supabase
+    .from("sinistri")
+    .insert({ ...input, data_apertura: new Date().toISOString().slice(0, 10) })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id as string;
+}
+
+export async function aggiungiMovimento(input: {
+  sinistro_id: string;
+  tipo: string;
+  importo: number;
+  data_movimento: string | null;
+  nota: string | null;
+}) {
+  const { error } = await supabase.from("movimenti_economici").insert(input);
+  if (error) throw error;
+}
+
+export async function eliminaMovimento(id: string) {
+  const { error } = await supabase.from("movimenti_economici").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function creaPratica(sinistroId: string) {
+  const { data, error } = await supabase
+    .from("pratiche_legali")
+    .insert({ sinistro_id: sinistroId, stato: "aperta", data_iscrizione: new Date().toISOString().slice(0, 10) })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id as string;
+}
+
+export async function aggiornaPratica(
+  id: string,
+  input: Omit<PraticaLegale, "id" | "sinistro_id" | "created_at" | "sinistro">,
+) {
+  const { error } = await supabase.from("pratiche_legali").update(input).eq("id", id);
+  if (error) throw error;
+}
+
+export async function aggiornaEventoSentinella(
+  id: string,
+  input: Partial<Omit<EventoSentinella, "id" | "azienda_id" | "presidio" | "unita">>,
+) {
+  const { error } = await supabase.from("eventi_sentinella").update(input).eq("id", id);
+  if (error) throw error;
+}
+
+export async function aggiornaAzione(
+  id: string,
+  input: Partial<Pick<AzioneCorrettiva, "responsabile_id" | "scadenza" | "stato" | "verificata_il" | "esito_verifica">>,
+) {
+  const { error } = await supabase.from("azioni_correttive").update(input).eq("id", id);
+  if (error) throw error;
+}
+
+/** Profili attivi di un'ASL: possibili responsabili delle azioni correttive. */
+export async function fetchProfiliAzienda(aziendaId: string) {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, nome, email, ruolo")
+    .eq("azienda_id", aziendaId)
+    .eq("attivo", true)
+    .order("nome");
+  if (error) throw error;
+  return (data ?? []) as Pick<Profile, "id" | "nome" | "email" | "ruolo">[];
+}
+
+export async function fetchModelliChecklist() {
+  const { data, error } = await supabase.from("modelli_checklist").select("id, nome, versione").eq("attivo", true).order("nome");
+  if (error) throw error;
+  return (data ?? []) as { id: string; nome: string; versione: string }[];
+}
+
+export async function creaFotografia(input: {
+  azienda_id: string;
+  presidio_id: string;
+  unita_operativa_id: string | null;
+  modello_id: string;
+  periodo_dal: string | null;
+  periodo_al: string | null;
+}) {
+  const { data, error } = await supabase
+    .from("fotografie_rischio")
+    .insert({ ...input, stato: "bozza" })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id as string;
+}
+
+export async function fetchVociFotografie(ids: string[]) {
+  if (!ids.length) return [];
+  const { data, error } = await supabase.from("fotografie_voci").select("*").in("fotografia_id", ids);
+  if (error) throw error;
+  return (data ?? []) as VoceFotografia[];
+}
+
+export async function fetchAttivita(presidioId: string) {
+  const { data, error } = await supabase
+    .from("attivita_presidio")
+    .select("*")
+    .eq("presidio_id", presidioId)
+    .order("anno", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as AttivitaPresidio[];
+}
+
+export async function salvaAttivita(righe: Omit<AttivitaPresidio, "id">[]) {
+  if (!righe.length) return;
+  const { error } = await supabase.from("attivita_presidio").upsert(righe, { onConflict: "presidio_id,anno" });
+  if (error) throw error;
 }

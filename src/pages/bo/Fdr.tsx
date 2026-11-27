@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { FiltriAmbito } from "@/components/FiltriAmbito";
+import { NuovaFotografia } from "@/components/NuovaFotografia";
 import { pillFdr } from "@/components/StatoBadge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -18,6 +19,9 @@ export function BoFdr() {
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        <NuovaFotografia />
+      </div>
       <FiltriAmbito value={filtri} onChange={setFiltri} mostraAzienda={profilo?.ruolo === "admin"} />
       <Card>
         <CardContent className="p-0 pt-2">

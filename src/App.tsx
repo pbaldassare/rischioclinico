@@ -25,6 +25,7 @@ import { BoLegaleDettaglio } from "@/pages/bo/LegaleDettaglio";
 import { BoAnagrafica } from "@/pages/bo/Anagrafica";
 import { BoReparti } from "@/pages/bo/Reparti";
 import { BoOperatori } from "@/pages/bo/Operatori";
+import { BoRegistro } from "@/pages/bo/Registro";
 import { Caricamento } from "@/mobile/atoms";
 import { usaPwa } from "@/lib/labels";
 
@@ -83,6 +84,7 @@ export default function App() {
             <Route path="fdr" element={<BoFdr />} />
             <Route path="fdr/:id" element={<BoFdrDettaglio />} />
             <Route path="report" element={<BoReport />} />
+            <Route path="registro" element={<BoRegistro />} />
             <Route path="sentinella" element={<BoSentinella />} />
             <Route path="legale" element={<BoLegale />} />
             <Route path="legale/:id" element={<BoLegaleDettaglio />} />

@@ -1,10 +1,9 @@
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useCatalog } from "@/lib/catalog";
@@ -20,6 +19,8 @@ import {
   fetchUtentiPresidio,
 } from "@/lib/queries";
 import type { Azienda, Presidio } from "@/lib/types";
+import { Campo, vuotoANull } from "@/components/Campi";
+import { AttivitaOspedale } from "@/components/AttivitaOspedale";
 import { eAdmin } from "@/lib/livelli";
 import { useAuth } from "@/lib/auth";
 import { Navigate } from "react-router-dom";
@@ -125,7 +126,10 @@ export function BoAnagrafica() {
                         {p.codice_struttura ? ` · ${p.codice_struttura}` : ""}
                         {p.posti_letto ? ` · ${p.posti_letto} posti letto` : ""}
                       </span>
-                      <ModificaOspedale presidio={p} />
+                      <span className="flex shrink-0">
+                        <AttivitaOspedale presidio={p} />
+                        <ModificaOspedale presidio={p} />
+                      </span>
                     </li>
                   ))}
               </ul>
@@ -229,14 +233,6 @@ export function BoAnagrafica() {
   );
 }
 
-function Campo({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
-      {children}
-    </div>
-  );
-}
 
 function SelectTipo({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
@@ -271,7 +267,6 @@ function SelectAsl({ value, onChange }: { value: string; onChange: (v: string) =
   );
 }
 
-const vuotoANull = (v: string) => v.trim() || null;
 
 function useModifica(chiave: string, salva: () => Promise<void>, elimina: () => Promise<void>, chiudi: () => void) {
   const qc = useQueryClient();

@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { FiltriAmbito } from "@/components/FiltriAmbito";
+import { FormSinistro } from "@/components/FormSinistro";
 import { StatoBadge } from "@/components/StatoBadge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -19,9 +20,13 @@ export function BoSinistri() {
   const [filtri, setFiltri] = useState<Filtri>(() => filtriPerProfilo(profilo));
   const q = useQuery({ queryKey: ["sinistri", filtri], queryFn: () => fetchSinistri(filtri) });
   const lista = useMemo(() => q.data ?? [], [q.data]);
+  const navigate = useNavigate();
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        <FormSinistro onCreato={(id) => navigate(`/bo/sinistri/${id}`)} />
+      </div>
       <FiltriAmbito value={filtri} onChange={setFiltri} mostraAzienda={profilo?.ruolo === "admin"} />
       <Card>
         <CardContent className="p-0 pt-2">
@@ -48,7 +53,10 @@ export function BoSinistri() {
                     </Link>
                     <p className="text-xs text-muted-foreground">{formatData(s.data_evento)}</p>
                   </TableCell>
-                  <TableCell>{s.presidio?.nome}</TableCell>
+                  <TableCell>
+                    {s.presidio?.nome}
+                    <p className="text-xs text-muted-foreground">{s.unita?.nome}</p>
+                  </TableCell>
                   <TableCell>{cat.etichetta("tipo_sinistro", s.tipo_sinistro_codice)}</TableCell>
                   <TableCell>
                     <StatoBadge stato={s.stato} mappa={ETICHETTE_STATO_SINISTRO} />

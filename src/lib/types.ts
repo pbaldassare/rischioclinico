@@ -77,6 +77,7 @@ export interface AnalisiRca {
   r: number | null;
   indice_rischio: number | null;
   fattori: string | null;
+  cause: string[];
   note_audit: string | null;
 }
 
@@ -145,6 +146,9 @@ export interface Sinistro {
   sentinella: boolean;
   denuncia_cautelativa: boolean;
   compagnia: string | null;
+  sesso_danneggiato: "M" | "F" | null;
+  eta_danneggiato: number | null;
+  descrizione: string | null;
   stato: string;
   created_at: string;
   presidio?: Presidio | null;
@@ -193,6 +197,8 @@ export interface EventoSentinella {
   tipo_codice: number;
   data_ora_evento: string | null;
   luogo_codice: string | null;
+  sesso: "M" | "F" | null;
+  anno_nascita: number | null;
   esito_codice: string | null;
   fonte_codice: string | null;
   scheda_a_inviata_il: string | null;
@@ -233,4 +239,12 @@ export interface PraticaLegale {
   prossima_scadenza: string | null;
   created_at: string;
   sinistro?: { id: string; codice_interno: string | null; presidio_id: string | null } | null;
+}
+
+export interface AttivitaPresidio {
+  id: string;
+  presidio_id: string;
+  anno: number;
+  ricoveri: number | null;
+  giornate_degenza: number | null;
 }

@@ -10,6 +10,7 @@ import {
   ShieldAlert,
   UserPlus,
   Hospital,
+  ListChecks,
 } from "lucide-react";
 import { DashboardShell, type VoceMenu } from "@/components/DashboardShell";
 import { Marchio } from "@/components/Marchio";
@@ -24,6 +25,7 @@ const BASE: VoceMenu[] = [
   { id: "/bo/segnalazioni", label: "Segnalazioni", icon: ClipboardList },
   { id: "/bo/sinistri", label: "Sinistri", icon: Landmark },
   { id: "/bo/fdr", label: "Fotografia del rischio", icon: FolderHeart },
+  { id: "/bo/registro", label: "Registro dei rischi", icon: ListChecks },
   { id: "/bo/report", label: "Report per livello", icon: BarChart3 },
   { id: "/bo/sentinella", label: "Eventi sentinella", icon: ShieldAlert },
   { id: "/bo/legale", label: "Pratiche legali", icon: Scale },

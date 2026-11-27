@@ -16,8 +16,7 @@ export function BoLegale() {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Consultazione delle cause collegate ai sinistri. Aggiornamento automatico importi e stati arriva nel secondo
-        rilascio.
+        Le cause collegate ai sinistri. Una pratica si apre dalla scheda del sinistro.
       </p>
       {lista.length === 0 ? (
         <Vuoto titolo="Nessuna pratica" testo="Non ci sono cause in archivio." />
