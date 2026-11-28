@@ -80,7 +80,7 @@ export function DashboardShell({
   );
 
   return (
-    <div className="flex h-[100dvh] overflow-hidden bg-background print:h-auto print:overflow-visible">
+    <div className="flex h-[100dvh] overflow-hidden bg-background print:h-auto print:overflow-visible print:bg-white">
       <aside className="hidden w-64 flex-col border-r border-border/70 bg-card md:flex print:!hidden">
         <div className="border-b border-border/70 p-6">{marchio}</div>
         {navigazione}

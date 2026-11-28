@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { PulsanteInstalla } from "@/components/PulsanteInstalla";
 import { Link } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 
 const DEMO = [
   { email: "admin@demo.asl", livello: "Admin — tutte le ASL, statistiche, sinistri" },
@@ -20,6 +21,7 @@ export function Login() {
   const { caricamento, accedi } = useAuth();
   const [email, setEmail] = useState("operatore.nord@demo.asl");
   const [password, setPassword] = useState("");
+  const [mostraPassword, setMostraPassword] = useState(false);
   const [errore, setErrore] = useState("");
   const [invio, setInvio] = useState(false);
 
@@ -76,14 +78,25 @@ export function Login() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={mostraPassword ? "text" : "password"}
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="pr-11"
+              />
+              <button
+                type="button"
+                onClick={() => setMostraPassword((v) => !v)}
+                aria-label={mostraPassword ? "Nascondi password" : "Mostra password"}
+                className="absolute inset-y-0 right-0 grid w-11 place-items-center text-muted-foreground"
+              >
+                {mostraPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
           {errore ? <p className="text-sm text-destructive">{errore}</p> : null}
           <Button type="submit" className="w-full" disabled={invio}>

@@ -135,7 +135,7 @@ export function BoReport() {
           mostraAzienda={profilo?.ruolo === "admin"}
         />
       </div>
-      <div className="griglia-kpi grid gap-4 md:grid-cols-3">
+      <div className="griglia-kpi grid gap-4 md:grid-cols-3 print:grid-cols-3">
         <KpiCard
           icon={BarChart3}
           titolo="Segnalazioni"
