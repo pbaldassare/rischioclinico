@@ -38,10 +38,8 @@ export function Backoffice() {
   const voci = useMemo(() => {
     const extra: VoceMenu[] = [];
     if (eAdmin(profilo)) extra.push({ id: "/bo/anagrafica", label: "ASL e ospedali", icon: Building2 });
-    if (ePresidio(profilo)) {
-      extra.push({ id: "/bo/reparti", label: "Reparti", icon: Hospital });
-      extra.push({ id: "/bo/operatori", label: "Operatori", icon: UserPlus });
-    }
+    extra.push({ id: "/bo/reparti", label: "Reparti", icon: Hospital });
+    if (ePresidio(profilo)) extra.push({ id: "/bo/operatori", label: "Operatori", icon: UserPlus });
     return [...BASE, ...extra];
   }, [profilo]);
   const attiva =

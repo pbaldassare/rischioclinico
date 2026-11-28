@@ -404,6 +404,21 @@ export async function sostituisciAssegnazioni(
   if (error) throw error;
 }
 
+export async function aggiungiAssegnazione(profileId: string, unitaId: string, privilegi: Privilegio[]) {
+  const { error } = await supabase.from("assegnazioni_reparto").insert({ profile_id: profileId, unita_operativa_id: unitaId, privilegi });
+  if (error) throw error;
+}
+
+export async function aggiornaAssegnazione(id: string, privilegi: Privilegio[]) {
+  const { error } = await supabase.from("assegnazioni_reparto").update({ privilegi }).eq("id", id);
+  if (error) throw error;
+}
+
+export async function rimuoviAssegnazione(id: string) {
+  const { error } = await supabase.from("assegnazioni_reparto").delete().eq("id", id);
+  if (error) throw error;
+}
+
 export async function creaUtentePiattaforma(input: {
   nome: string;
   email: string;
