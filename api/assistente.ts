@@ -14,6 +14,7 @@ export interface SchedaProposta {
   luogo?: string;
   sentinella?: boolean;
   tipo_sentinella?: number | null;
+  data_ora?: string | null;
 }
 
 export interface AssistenteRisposta {
@@ -95,7 +96,11 @@ function bozzaLocale(tipo: AssistenteTipo, testo: string, contesto: Record<strin
   return {
     fonte: "modello_locale",
     avviso,
-    testo: `Durante il turno, ${nucleo.replace(/^durante\s+/i, "")}. Dinamica da confermare in scheda (orario, testimoni, esito).`,
+    // Scrittura guidata (Cosa è successo: …): il testo è già una scheda, non va riformulato.
+    testo: /Cosa è successo:/.test(testo)
+      ? testo.replace(/(Cosa è successo|Quando|Dove|A chi|Come è andata a finire): /g, "").replace(/
+/g, " ")
+      : `Durante il turno, ${nucleo.replace(/^durante\s+/i, "")}. Dinamica da confermare in scheda (orario, testimoni, esito).`,
     scheda: { tipo_evento, danno, fase_cura: "assistenza", sentinella: false, tipo_sentinella: null },
   };
 }
@@ -121,7 +126,9 @@ Compila una scheda di incident reporting. Rispondi JSON:
   "fase_cura": uno tra [${voci("fasi")}],
   "luogo": uno tra [${voci("luoghi")}],
   "sentinella": true solo se rientra negli eventi sentinella del Ministero,
-  "tipo_sentinella": numero dell'evento sentinella o null — elenco: ${voci("sentinelle")} }`
+  "tipo_sentinella": numero dell'evento sentinella o null — elenco: ${voci("sentinelle")},
+  "data_ora": data e ora dell'evento in ISO 8601 se il racconto dice quando (es. "stanotte alle tre", "ieri pomeriggio"), calcolata rispetto ad adesso = ${String(contesto.adesso ?? "")}; altrimenti null }
+Traduci il linguaggio di reparto nei codici: "è scivolato, è caduto, trovato a terra" = caduta; "terapia sbagliata, doppia dose, farmaco sbagliato, dimenticato" = gestione_farmaco; "braccialetto, paziente sbagliato, scambio, lato sbagliato" = identificazione; "aggressione, spinta, insulti, minacce" = violenza_operatore se verso il personale, violenza_paziente se verso un paziente; "piaga, lesione da pressione" = decubito; "se n'è andato, non si trova, fuggito" = allontanamento; "monitor rotto, pompa guasta, apparecchio" = apparecchiature; "referto in ritardo, diagnosi sbagliata" = diagnosi; "infezione, febbre dopo intervento" = infezione. Il danno: "sta bene, niente" = nessuno; "ematoma, dolore, medicato" = lieve; "frattura, trasferito, ricoverato, deceduto" = grave.`
       : tipo === "rca"
         ? `Dinamica: ${contesto.dinamica ?? testo}. Impatto: ${contesto.impatto ?? ""}. JSON { "testo": string, "p": 1|2|3, "m": 1|2|3, "r": 1|2|3, "fattori": string }`
         : `Livello ${contesto.livello}. Segnalazioni ${contesto.segnalazioni}, sinistri ${contesto.sinistri}, RIS+LIQ ${contesto.risLiq}. JSON { "testo": string }`;
@@ -166,6 +173,7 @@ Compila una scheda di incident reporting. Rispondi JSON:
           luogo: valido("luoghi", parsed.luogo),
           sentinella: Boolean(parsed.sentinella),
           tipo_sentinella: parsed.sentinella && valido("sentinelle", parsed.tipo_sentinella) ? Number(parsed.tipo_sentinella) : null,
+          data_ora: parsed.data_ora && !Number.isNaN(Date.parse(String(parsed.data_ora))) ? String(parsed.data_ora) : null,
         }
       : undefined;
   const scala = (n: unknown, fallback: number) => {

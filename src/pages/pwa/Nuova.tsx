@@ -1,7 +1,7 @@
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Camera, Mic, PenLine, Sparkles, X } from "lucide-react";
+import { Camera, Check, Circle, Mic, PenLine, Sparkles, Square, X } from "lucide-react";
 import { Intestazione } from "@/mobile/Intestazione";
 import { Scheda } from "@/mobile/atoms";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useCatalog } from "@/lib/catalog";
 import { useAuth } from "@/lib/auth";
 import { haPrivilegio, unitaAssegnate } from "@/lib/livelli";
@@ -32,6 +33,38 @@ const DANNO_IN_CODICI: Record<Danno, { gravita: string; magnitudo: string }> = {
 };
 // shortcut: i video partono interi; 10 MB è il limite del bucket rc-allegati (circa 30-60 s da telefono), per andare oltre serve comprimere lato server
 const MAX_VIDEO = 10 * 1024 * 1024;
+const GUIDA_KEY = "rc.guida-voce-vista";
+const LIMITE_DOLCE_S = 120;
+
+// La traccia del racconto: cinque cose da dire. Le regex servono solo alle spunte, non alla scheda.
+const TRACCIA = [
+  { k: "cosa", etichetta: "Cosa è successo", re: /\S+(\s+\S+){5,}/ },
+  { k: "quando", etichetta: "Quando: giorno e ora", re: /\b(ieri|oggi|stanotte|stamattina|stasera|pomeriggio|mattin|sera|notte|turno|alle?\s?\d|ore\s?\d|\d{1,2}[:.]\d{2}|minuti fa|poco fa)/i },
+  { k: "dove", etichetta: "Dove: reparto, stanza", re: /\b(reparto|stanza|letto|corridoio|bagno|sala|pronto soccorso|ambulator|ascensore|corsia|terapia intensiva|degenza|camera|ingresso|triage|parcheggio)/i },
+  { k: "chi", etichetta: "A chi, senza nomi", re: /\b(paziente|signor|operator|infermier|medic|oss\b|visitator|collega|bambin|anzian|degente|utente|famili)/i },
+  { k: "esito", etichetta: "Come è andata a finire", re: /\b(nessun danno|senza danno|sta bene|nulla di grave|ferit|frattur|trauma|ematoma|trasferit|ortopedia|ricover|deced|mort|dolor|lesion|medicat|sutur|radiograf|tac\b|dimess|tutto ok|sotto controllo)/i },
+] as const;
+type Voce = (typeof TRACCIA)[number]["k"];
+const ESEMPIO =
+  "Stanotte verso le tre la paziente del letto 4 è scivolata andando in bagno, ha battuto l’anca, l’abbiamo portata in ortopedia.";
+
+const GUIDATO: { k: Voce; etichetta: string; placeholder: string }[] = [
+  { k: "cosa", etichetta: "Cosa è successo", placeholder: "Es. la paziente è scivolata andando in bagno" },
+  { k: "quando", etichetta: "Quando", placeholder: "Es. stanotte verso le tre" },
+  { k: "dove", etichetta: "Dove", placeholder: "Es. corridoio del reparto, letto 4" },
+  { k: "chi", etichetta: "A chi", placeholder: "Es. paziente, operatore, visitatore (senza nomi)" },
+  { k: "esito", etichetta: "Come è andata a finire", placeholder: "Es. ha battuto l’anca, portata in ortopedia" },
+];
+
+interface SpeechRec {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  start: () => void;
+  stop: () => void;
+  onresult: ((ev: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  onerror: (() => void) | null;
+}
 
 export function PwaNuova() {
   const cat = useCatalog();
@@ -42,13 +75,20 @@ export function PwaNuova() {
   const reparti = useMemo(() => cat.unita.filter((u) => assegnate.includes(u.id)), [cat.unita, assegnate]);
 
   // Raccolta
-  const [passo, setPasso] = useState<"raccolta" | "revisione">("raccolta");
+  const [passo, setPasso] = useState<"raccolta" | "riepilogo" | "revisione">("raccolta");
+  const [guidaAperta, setGuidaAperta] = useState(false);
+  const [nonMostrare, setNonMostrare] = useState(false);
   const [testo, setTesto] = useState("");
+  const [parziale, setParziale] = useState("");
+  const [secondi, setSecondi] = useState(0);
   const [scrivo, setScrivo] = useState(false);
+  const [guidato, setGuidato] = useState<Record<Voce, string>>({ cosa: "", quando: "", dove: "", chi: "", esito: "" });
   const [media, setMedia] = useState<File[]>([]);
   const [ascolto, setAscolto] = useState<"no" | "registro" | "trascrivo">("no");
   const [elaboro, setElaboro] = useState(false);
   const registratore = useRef<MediaRecorder | null>(null);
+  const riconoscitore = useRef<SpeechRec | null>(null);
+  const timer = useRef<number | null>(null);
 
   // Scheda
   const [unitaId, setUnitaId] = useState(reparti[0]?.id ?? "");
@@ -63,15 +103,49 @@ export function PwaNuova() {
   const [impatto, setImpatto] = useState("");
   const [dettagli, setDettagli] = useState(false);
   const [avvisoIa, setAvvisoIa] = useState("");
+  const [proposti, setProposti] = useState<Set<string>>(new Set());
+  const [raccontoOriginale, setRaccontoOriginale] = useState("");
   const [invio, setInvio] = useState(false);
 
   const unitaScelta = reparti.find((u) => u.id === unitaId) ?? reparti[0];
+  const testoGuidato = GUIDATO.filter((g) => guidato[g.k].trim())
+    .map((g) => `${g.etichetta}: ${guidato[g.k].trim()}`)
+    .join(". ");
+  const testoCompleto = [testo.trim(), testoGuidato].filter(Boolean).join("\n");
+  const copertura = useMemo(() => {
+    const t = `${testoCompleto} ${parziale}`;
+    return TRACCIA.map((v) => ({ ...v, ok: v.re.test(t) }));
+  }, [testoCompleto, parziale]);
+  const mancanti = copertura.filter((v) => !v.ok);
 
-  async function dettato() {
+  useEffect(() => () => fermaTimer(), []);
+
+  function fermaTimer() {
+    if (timer.current) window.clearInterval(timer.current);
+    timer.current = null;
+  }
+
+  function spegni(k: string) {
+    setProposti((prev) => {
+      if (!prev.has(k)) return prev;
+      const n = new Set(prev);
+      n.delete(k);
+      return n;
+    });
+  }
+
+  function raccontaAVoce() {
     if (ascolto === "registro") {
       registratore.current?.stop();
       return;
     }
+    if (localStorage.getItem(GUIDA_KEY)) void avviaRegistrazione();
+    else setGuidaAperta(true);
+  }
+
+  async function avviaRegistrazione() {
+    setGuidaAperta(false);
+    if (nonMostrare) localStorage.setItem(GUIDA_KEY, "1");
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
       toast.error("Il dettato non è disponibile in questo browser");
       return;
@@ -85,6 +159,10 @@ export function PwaNuova() {
       };
       rec.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
+        fermaTimer();
+        riconoscitore.current?.stop();
+        riconoscitore.current = null;
+        setParziale("");
         setAscolto("trascrivo");
         try {
           const detto = await trascrivi(new Blob(pezzi, { type: rec.mimeType || "audio/webm" }));
@@ -97,9 +175,31 @@ export function PwaNuova() {
       };
       registratore.current = rec;
       rec.start();
+      setSecondi(0);
+      timer.current = window.setInterval(() => setSecondi((s) => s + 1), 1000);
+      avviaSpunteDalVivo();
       setAscolto("registro");
     } catch {
       toast.error("Microfono non disponibile");
+    }
+  }
+
+  // Riconoscimento del browser solo per le spunte mentre parla: il testo vero arriva da Whisper.
+  function avviaSpunteDalVivo() {
+    const w = window as unknown as { SpeechRecognition?: new () => SpeechRec; webkitSpeechRecognition?: new () => SpeechRec };
+    const SR = w.SpeechRecognition ?? w.webkitSpeechRecognition;
+    if (!SR) return;
+    try {
+      const r = new SR();
+      r.lang = "it-IT";
+      r.continuous = true;
+      r.interimResults = true;
+      r.onresult = (ev) => setParziale(Array.from(ev.results, (res) => res[0]?.transcript ?? "").join(" "));
+      r.onerror = () => undefined;
+      r.start();
+      riconoscitore.current = r;
+    } catch {
+      riconoscitore.current = null;
     }
   }
 
@@ -115,7 +215,7 @@ export function PwaNuova() {
   }
 
   async function creaScheda() {
-    if (!testo.trim() && media.length === 0) {
+    if (!testoCompleto && media.length === 0) {
       toast.error("Racconta, fotografa o scrivi qualcosa prima");
       return;
     }
@@ -128,10 +228,11 @@ export function PwaNuova() {
       }
       const r = await proponiAssistente({
         tipo: "segnalazione",
-        testo,
+        testo: testoCompleto,
         immagini: immagini.slice(0, 6),
         contesto: {
           reparto: unitaScelta?.nome,
+          adesso: new Date().toISOString(),
           elenchi: {
             tipi: cat.elenco("tipo_evento_ir").map((c) => ({ codice: c.codice, etichetta: c.etichetta })),
             fasi: cat.elenco("fase_cura").map((c) => ({ codice: c.codice, etichetta: c.etichetta })),
@@ -140,16 +241,34 @@ export function PwaNuova() {
           },
         },
       });
-      setDinamica(r.testo);
       const s = r.scheda ?? {};
-      if (s.tipo_evento) setTipo(s.tipo_evento);
-      if (s.danno) setDanno(s.danno);
-      if (s.fase_cura) setFase(s.fase_cura);
+      const p = new Set<string>(["dinamica"]);
+      setDinamica(r.testo);
+      if (s.tipo_evento) {
+        setTipo(s.tipo_evento);
+        p.add("tipo");
+      }
+      if (s.danno) {
+        setDanno(s.danno);
+        p.add("danno");
+      }
+      if (s.fase_cura) {
+        setFase(s.fase_cura);
+        p.add("fase");
+      }
       setLuogo(s.luogo ?? luogoDaReparto(unitaScelta?.nome));
+      if (s.luogo) p.add("luogo");
       setSentinella(Boolean(s.sentinella));
+      if (s.sentinella) p.add("sentinella");
       if (s.tipo_sentinella) setTipoSentinella(String(s.tipo_sentinella));
+      if (s.data_ora && !Number.isNaN(new Date(s.data_ora).getTime())) {
+        setDataOra(oraLocale(new Date(s.data_ora)));
+        p.add("dataOra");
+      }
+      setProposti(p);
+      setRaccontoOriginale(testoCompleto);
       setAvvisoIa(r.avviso);
-      setPasso("revisione");
+      setPasso("riepilogo");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Assistente non disponibile");
     } finally {
@@ -158,8 +277,10 @@ export function PwaNuova() {
   }
 
   function compilaAMano() {
-    setDinamica(testo);
+    setDinamica(testoCompleto);
     setLuogo(luogoDaReparto(unitaScelta?.nome));
+    setProposti(new Set());
+    setRaccontoOriginale("");
     setAvvisoIa("");
     setPasso("revisione");
   }
@@ -218,40 +339,62 @@ export function PwaNuova() {
     }
   }
 
+  const quandoDetto = new Date(dataOra).toLocaleString("it-IT", { dateStyle: "medium", timeStyle: "short" });
+
   if (passo === "raccolta") {
+    const registro = ascolto === "registro";
+    const haRacconto = Boolean(testo.trim());
     return (
       <div className="flex flex-1 flex-col px-4 pb-6">
         <Intestazione titolo="Nuova segnalazione" sottotitolo="Racconta cos’è successo, al resto pensa l’assistente" indietro />
 
-        <div className="grid grid-cols-2 gap-3">
-          <Azione
-            attiva={ascolto === "registro"}
-            disabled={ascolto === "trascrivo"}
-            onClick={() => void dettato()}
-            icona={<Mic className="h-7 w-7" aria-hidden />}
-            titolo={ascolto === "registro" ? "Ferma" : ascolto === "trascrivo" ? "Trascrivo…" : "Racconta a voce"}
-            nota={ascolto === "registro" ? "Sto registrando" : "Parla come a un collega"}
-          />
-          <label className="contents">
-            <input
-              type="file"
-              accept="image/*,video/*"
-              capture="environment"
-              multiple
-              className="hidden"
-              onChange={(e) => {
-                aggiungiMedia(e.target.files);
-                e.target.value = "";
-              }}
-            />
+        {registro ? (
+          <Scheda className="space-y-4 border-primary/40 p-4">
+            <div className="flex items-center justify-between">
+              <span className="inline-flex items-center gap-2 font-display text-sm font-bold">
+                <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-destructive" aria-hidden />
+                Sto ascoltando
+              </span>
+              <span className="font-mono text-sm tabular-nums text-muted-foreground">{mmss(secondi)}</span>
+            </div>
+            <Traccia voci={copertura} />
+            {secondi >= LIMITE_DOLCE_S ? (
+              <p className="text-xs text-warning-ink">Racconto lungo: ferma pure, potrai aggiungere un pezzo dopo.</p>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => registratore.current?.stop()}
+              className="flex min-h-14 w-full items-center justify-center gap-2 rounded-lg bg-destructive font-display text-base font-bold text-destructive-foreground"
+            >
+              <Square className="h-5 w-5" aria-hidden />
+              Ferma e trascrivi
+            </button>
+          </Scheda>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
             <Azione
-              icona={<Camera className="h-7 w-7" aria-hidden />}
-              titolo="Foto o video"
-              nota="Dalla fotocamera, video fino a 10 MB"
-              come="span"
+              disabled={ascolto === "trascrivo"}
+              onClick={raccontaAVoce}
+              icona={<Mic className="h-7 w-7" aria-hidden />}
+              titolo={ascolto === "trascrivo" ? "Trascrivo…" : haRacconto ? "Aggiungi un pezzo" : "Racconta a voce"}
+              nota={haRacconto ? "Si accoda al racconto" : "Parla come a un collega"}
             />
-          </label>
-        </div>
+            <label className="contents">
+              <input
+                type="file"
+                accept="image/*,video/*"
+                capture="environment"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  aggiungiMedia(e.target.files);
+                  e.target.value = "";
+                }}
+              />
+              <Azione icona={<Camera className="h-7 w-7" aria-hidden />} titolo="Foto o video" nota="Dalla fotocamera, video fino a 10 MB" come="span" />
+            </label>
+          </div>
+        )}
 
         {media.length ? (
           <ul className="mt-3 flex flex-wrap gap-2">
@@ -271,35 +414,126 @@ export function PwaNuova() {
           </ul>
         ) : null}
 
-        {testo || scrivo ? (
-          <div className="mt-4 space-y-2">
-            <Label>Il tuo racconto</Label>
-            <Textarea
-              value={testo}
-              onChange={(e) => setTesto(e.target.value)}
-              placeholder="Cosa è successo, dove, quando, a chi"
-              className="min-h-[140px]"
-              autoFocus={scrivo && !testo}
-            />
+        {haRacconto && !registro ? (
+          <div className="mt-4 space-y-3">
+            <div className="space-y-2">
+              <Label>Il tuo racconto, correggi se serve</Label>
+              <Textarea value={testo} onChange={(e) => setTesto(e.target.value)} className="min-h-[140px]" />
+            </div>
+            <Traccia voci={copertura} compatta />
+            {mancanti.length ? (
+              <p className="text-xs text-muted-foreground">
+                Non hai detto {mancanti.map((v) => v.etichetta.split(":")[0].toLowerCase()).join(", ")}. Puoi aggiungere un pezzo a voce o scriverlo qui sopra.
+                {mancanti.some((v) => v.k === "quando") ? ` Se non lo dici, metto adesso: ${quandoDetto}.` : ""}
+              </p>
+            ) : (
+              <p className="text-xs text-success-ink">Hai detto tutto quello che serve.</p>
+            )}
           </div>
-        ) : (
-          <button type="button" onClick={() => setScrivo(true)} className="mt-4 inline-flex items-center gap-1.5 self-start text-sm font-semibold text-primary">
-            <PenLine className="h-4 w-4" aria-hidden />
-            Preferisci scrivere?
-          </button>
-        )}
+        ) : null}
 
+        {!registro ? (
+          scrivo ? (
+            <Scheda className="mt-4 space-y-3 p-4">
+              <p className="font-display text-sm font-bold">Scrivi in cinque righe</p>
+              {GUIDATO.map((g) => (
+                <div key={g.k} className="space-y-1">
+                  <Label htmlFor={`g-${g.k}`}>{g.etichetta}</Label>
+                  <Input
+                    id={`g-${g.k}`}
+                    value={guidato[g.k]}
+                    placeholder={g.placeholder}
+                    onChange={(e) => setGuidato((prev) => ({ ...prev, [g.k]: e.target.value }))}
+                  />
+                </div>
+              ))}
+            </Scheda>
+          ) : (
+            <button type="button" onClick={() => setScrivo(true)} className="mt-4 inline-flex items-center gap-1.5 self-start text-sm font-semibold text-primary">
+              <PenLine className="h-4 w-4" aria-hidden />
+              {haRacconto ? "Aggiungi qualcosa per iscritto" : "Preferisci scrivere?"}
+            </button>
+          )
+        ) : null}
+
+        {!registro ? (
+          <>
+            <button
+              type="button"
+              onClick={() => void creaScheda()}
+              disabled={elaboro || ascolto !== "no"}
+              className="mt-5 flex min-h-14 w-full items-center justify-center gap-2 rounded-lg bg-primary font-display text-base font-bold text-primary-foreground shadow-glow disabled:opacity-50"
+            >
+              <Sparkles className="h-5 w-5" aria-hidden />
+              {elaboro ? "L’assistente sta compilando…" : "Crea la scheda con l’assistente"}
+            </button>
+            <button type="button" onClick={compilaAMano} className="mt-3 text-center text-xs font-semibold text-muted-foreground">
+              Compila la scheda a mano
+            </button>
+          </>
+        ) : null}
+
+        <Sheet open={guidaAperta} onOpenChange={setGuidaAperta}>
+          <SheetContent side="bottom" className="rounded-t-2xl pb-[calc(16px+env(safe-area-inset-bottom))]">
+            <SheetTitle className="font-display text-lg font-bold">Racconta come a un collega</SheetTitle>
+            <p className="mt-1 text-sm text-muted-foreground">Bastano trenta secondi. Di’ queste cinque cose, nell’ordine che vuoi:</p>
+            <ol className="mt-3 space-y-2">
+              {TRACCIA.map((v, i) => (
+                <li key={v.k} className="flex items-center gap-3 text-sm">
+                  <span className="grid h-6 w-6 flex-none place-items-center rounded-full bg-secondary font-display text-xs font-bold text-primary">{i + 1}</span>
+                  {v.etichetta}
+                </li>
+              ))}
+            </ol>
+            <blockquote className="mt-4 rounded-lg bg-muted p-3 text-sm italic leading-relaxed">«{ESEMPIO}»</blockquote>
+            <label className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
+              <input type="checkbox" checked={nonMostrare} onChange={(e) => setNonMostrare(e.target.checked)} className="h-4 w-4 accent-primary" />
+              Non mostrare più
+            </label>
+            <button
+              type="button"
+              onClick={() => void avviaRegistrazione()}
+              className="mt-4 flex min-h-14 w-full items-center justify-center gap-2 rounded-lg bg-primary font-display text-base font-bold text-primary-foreground shadow-glow"
+            >
+              <Mic className="h-5 w-5" aria-hidden />
+              Inizia a registrare
+            </button>
+          </SheetContent>
+        </Sheet>
+      </div>
+    );
+  }
+
+  if (passo === "riepilogo") {
+    const righe = [
+      cat.etichetta("tipo_evento_ir", tipo),
+      quandoDetto,
+      `${unitaScelta?.nome ?? ""} · ${cat.etichetta("luogo", luogo)}`,
+      `${DANNI.find((d) => d.codice === danno)?.etichetta ?? ""}${sentinella ? " · evento sentinella" : ""}`,
+    ];
+    return (
+      <div className="flex flex-1 flex-col px-4 pb-6">
+        <Intestazione titolo="Ho capito così" sottotitolo="Dimmi se è giusto" indietro />
+        <Scheda className="space-y-3 p-4">
+          <ul className="space-y-2">
+            {righe.map((r) => (
+              <li key={r} className="flex items-start gap-2 text-sm">
+                <Check className="mt-0.5 h-4 w-4 flex-none text-primary" aria-hidden />
+                <span>{r}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="text-sm leading-relaxed text-muted-foreground">{dinamica}</p>
+        </Scheda>
         <button
           type="button"
-          onClick={() => void creaScheda()}
-          disabled={elaboro || ascolto !== "no"}
-          className="mt-5 flex min-h-14 w-full items-center justify-center gap-2 rounded-lg bg-primary font-display text-base font-bold text-primary-foreground shadow-glow disabled:opacity-50"
+          onClick={() => setPasso("revisione")}
+          className="mt-5 flex min-h-14 w-full items-center justify-center rounded-lg bg-primary font-display text-base font-bold text-primary-foreground shadow-glow"
         >
-          <Sparkles className="h-5 w-5" aria-hidden />
-          {elaboro ? "L’assistente sta compilando…" : "Crea la scheda con l’assistente"}
+          Sì, apri la scheda
         </button>
-        <button type="button" onClick={compilaAMano} className="mt-3 text-center text-xs font-semibold text-muted-foreground">
-          Compila la scheda a mano
+        <button type="button" onClick={() => setPasso("raccolta")} className="mt-3 text-center text-sm font-semibold text-primary">
+          No, correggo il racconto
         </button>
       </div>
     );
@@ -315,21 +549,44 @@ export function PwaNuova() {
           void invia();
         }}
       >
-        <Campo label="Dinamica">
-          <Textarea value={dinamica} onChange={(e) => setDinamica(e.target.value)} required className="min-h-[150px]" />
+        <Campo label="Dinamica" proposto={proposti.has("dinamica")}>
+          <Textarea
+            value={dinamica}
+            onChange={(e) => {
+              setDinamica(e.target.value);
+              spegni("dinamica");
+            }}
+            required
+            className="min-h-[150px]"
+          />
+          {raccontoOriginale ? (
+            <p className="text-xs text-muted-foreground">
+              Hai detto: «{raccontoOriginale.length > 180 ? `${raccontoOriginale.slice(0, 180)}…` : raccontoOriginale}»
+            </p>
+          ) : null}
         </Campo>
 
-        <Campo label="Tipologia evento">
-          <Elenco tipo="tipo_evento_ir" value={tipo} onChange={setTipo} />
+        <Campo label="Tipologia evento" proposto={proposti.has("tipo")}>
+          <Elenco
+            tipo="tipo_evento_ir"
+            value={tipo}
+            onChange={(v) => {
+              setTipo(v);
+              spegni("tipo");
+            }}
+          />
         </Campo>
 
-        <Campo label="Gravità">
+        <Campo label="Gravità" proposto={proposti.has("danno")}>
           <div className="grid grid-cols-3 gap-2">
             {DANNI.map((d) => (
               <button
                 key={d.codice}
                 type="button"
-                onClick={() => setDanno(d.codice)}
+                onClick={() => {
+                  setDanno(d.codice);
+                  spegni("danno");
+                }}
                 className={cn(
                   "min-h-11 rounded-lg border px-2 font-display text-xs font-bold transition-colors",
                   danno === d.codice ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-foreground",
@@ -342,8 +599,18 @@ export function PwaNuova() {
         </Campo>
 
         <div className="flex min-h-11 items-center justify-between rounded-xl border border-border bg-card px-4">
-          <Label htmlFor="sentinella">Evento sentinella</Label>
-          <Switch id="sentinella" checked={sentinella} onCheckedChange={setSentinella} />
+          <Label htmlFor="sentinella" className="inline-flex items-center gap-2">
+            Evento sentinella
+            {proposti.has("sentinella") ? <Proposto /> : null}
+          </Label>
+          <Switch
+            id="sentinella"
+            checked={sentinella}
+            onCheckedChange={(v) => {
+              setSentinella(v);
+              spegni("sentinella");
+            }}
+          />
         </div>
         {sentinella ? (
           <Campo label="Tipo sentinella">
@@ -362,8 +629,15 @@ export function PwaNuova() {
           </Campo>
         ) : null}
 
-        <Campo label="Data e ora evento">
-          <Input type="datetime-local" value={dataOra} onChange={(e) => setDataOra(e.target.value)} />
+        <Campo label="Data e ora evento" proposto={proposti.has("dataOra")}>
+          <Input
+            type="datetime-local"
+            value={dataOra}
+            onChange={(e) => {
+              setDataOra(e.target.value);
+              spegni("dataOra");
+            }}
+          />
         </Campo>
 
         {reparti.length > 1 ? (
@@ -382,13 +656,13 @@ export function PwaNuova() {
             </Select>
           </Campo>
         ) : (
-          <p className="text-[10.5px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             {unitaScelta?.nome ?? "Nessun reparto"} · {cat.nomePresidio(unitaScelta?.presidio_id)}
           </p>
         )}
 
         {media.length ? (
-          <p className="text-[10.5px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             {media.length} {media.length === 1 ? "allegato" : "allegati"} in invio con la scheda.
           </p>
         ) : null}
@@ -398,11 +672,25 @@ export function PwaNuova() {
         </button>
         {dettagli ? (
           <Scheda className="space-y-3 p-4">
-            <Campo label="Fase di cura">
-              <Elenco tipo="fase_cura" value={fase} onChange={setFase} />
+            <Campo label="Fase di cura" proposto={proposti.has("fase")}>
+              <Elenco
+                tipo="fase_cura"
+                value={fase}
+                onChange={(v) => {
+                  setFase(v);
+                  spegni("fase");
+                }}
+              />
             </Campo>
-            <Campo label="Luogo">
-              <Elenco tipo="luogo" value={luogo} onChange={setLuogo} />
+            <Campo label="Luogo" proposto={proposti.has("luogo")}>
+              <Elenco
+                tipo="luogo"
+                value={luogo}
+                onChange={(v) => {
+                  setLuogo(v);
+                  spegni("luogo");
+                }}
+              />
             </Campo>
             <Campo label="Impatto (facoltativo)">
               <Textarea value={impatto} onChange={(e) => setImpatto(e.target.value)} />
@@ -433,17 +721,36 @@ function luogoDaReparto(nome?: string) {
   return "reparto_degenza";
 }
 
-function oraLocale() {
-  const d = new Date();
+function oraLocale(d = new Date()) {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function mmss(s: number) {
+  return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+}
+
+function Traccia({ voci, compatta }: { voci: { k: string; etichetta: string; ok: boolean }[]; compatta?: boolean }) {
+  return (
+    <ul className={cn(compatta ? "flex flex-wrap gap-x-3 gap-y-1" : "space-y-1.5")}>
+      {voci.map((v) => (
+        <li key={v.k} className={cn("inline-flex items-center gap-1.5 text-xs", v.ok ? "text-success-ink" : "text-muted-foreground")}>
+          {v.ok ? <Check className="h-3.5 w-3.5" aria-hidden /> : <Circle className="h-3.5 w-3.5" aria-hidden />}
+          {compatta ? v.etichetta.split(":")[0] : v.etichetta}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function Proposto() {
+  return <span className="rounded-md bg-secondary px-1.5 py-0.5 text-[10px] font-semibold text-primary">proposto</span>;
 }
 
 function Azione({
   icona,
   titolo,
   nota,
-  attiva,
   disabled,
   onClick,
   come = "button",
@@ -451,21 +758,19 @@ function Azione({
   icona: ReactNode;
   titolo: string;
   nota: string;
-  attiva?: boolean;
   disabled?: boolean;
   onClick?: () => void;
   come?: "button" | "span";
 }) {
   const classi = cn(
-    "flex min-h-[124px] cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border p-3 text-center shadow-card transition-colors",
-    attiva ? "border-destructive bg-destructive text-destructive-foreground" : "border-border bg-card text-foreground",
+    "flex min-h-[124px] cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-border bg-card p-3 text-center text-foreground shadow-card transition-colors",
     disabled && "opacity-50",
   );
   const dentro = (
     <>
-      <span className={cn("grid h-12 w-12 place-items-center rounded-full", attiva ? "bg-white/20" : "bg-primary/10 text-primary")}>{icona}</span>
+      <span className="grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">{icona}</span>
       <span className="font-display text-sm font-bold">{titolo}</span>
-      <span className={cn("text-[10.5px]", attiva ? "text-destructive-foreground/80" : "text-muted-foreground")}>{nota}</span>
+      <span className="text-xs text-muted-foreground">{nota}</span>
     </>
   );
   if (come === "span") return <span className={classi}>{dentro}</span>;
@@ -482,10 +787,13 @@ function Anteprima({ file }: { file: File }) {
   return <img src={url} alt={file.name} className="h-16 w-16 rounded-xl border border-border object-cover" />;
 }
 
-function Campo({ label, children }: { label: string; children: ReactNode }) {
+function Campo({ label, proposto, children }: { label: string; proposto?: boolean; children: ReactNode }) {
   return (
     <div className="space-y-2">
-      <Label>{label}</Label>
+      <Label className="inline-flex items-center gap-2">
+        {label}
+        {proposto ? <Proposto /> : null}
+      </Label>
       {children}
     </div>
   );

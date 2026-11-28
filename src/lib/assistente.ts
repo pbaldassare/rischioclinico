@@ -14,6 +14,7 @@ export interface SchedaProposta {
   luogo?: string;
   sentinella?: boolean;
   tipo_sentinella?: number | null;
+  data_ora?: string | null;
 }
 
 export interface AssistenteRisposta {
