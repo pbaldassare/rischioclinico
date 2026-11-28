@@ -3,7 +3,7 @@ import { HeartPulse, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function TitoloSezione({ children }: { children: ReactNode }) {
-  return <h2 className="mx-0.5 mt-1 font-display text-[13px] font-bold">{children}</h2>;
+  return <h2 className="mx-0.5 font-display text-base font-bold">{children}</h2>;
 }
 
 export function Caricamento({ etichetta = "Caricamento…" }: { etichetta?: string }) {
