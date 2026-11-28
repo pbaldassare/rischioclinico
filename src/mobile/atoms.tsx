@@ -38,7 +38,7 @@ export function Vuoto({
 
 export function Scheda({ children, className, ...resto }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("rounded-[19px] border border-border bg-card p-3 shadow-card", className)} {...resto}>
+    <div className={cn("rounded-xl border border-border bg-card p-3 shadow-card", className)} {...resto}>
       {children}
     </div>
   );

@@ -125,7 +125,7 @@ export function PwaProfilo() {
           <Label htmlFor="telefono">Telefono</Label>
           <Input id="telefono" type="tel" inputMode="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} autoComplete="tel" />
         </div>
-        <Button type="button" className="w-full" onClick={() => void salvaDati()} disabled={attesa === "dati" || !nome.trim()}>
+        <Button type="button" className="w-full rounded-lg" onClick={() => void salvaDati()} disabled={attesa === "dati" || !nome.trim()}>
           {attesa === "dati" ? "Salvo…" : "Salva dati"}
         </Button>
       </Scheda>
@@ -155,7 +155,7 @@ export function PwaProfilo() {
           <Label htmlFor="nuova-password">Nuova password</Label>
           <Input id="nuova-password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Almeno 8 caratteri" />
         </div>
-        <Button type="button" variant="outline" className="w-full" onClick={() => void cambiaPassword()} disabled={attesa === "password" || !password}>
+        <Button type="button" variant="outline" className="w-full rounded-lg" onClick={() => void cambiaPassword()} disabled={attesa === "password" || !password}>
           {attesa === "password" ? "Cambio…" : "Cambia password"}
         </Button>
         <button type="button" onClick={() => void recuperoViaEmail()} disabled={attesa === "recupero"} className="w-full text-center text-xs font-semibold text-primary">
@@ -163,7 +163,7 @@ export function PwaProfilo() {
         </button>
       </Scheda>
 
-      <Button variant="outline" className="mt-4 w-full" onClick={() => void esci().then(() => navigate("/"))}>
+      <Button variant="outline" className="mt-4 w-full rounded-lg" onClick={() => void esci().then(() => navigate("/"))}>
         Esci
       </Button>
       <button type="button" onClick={() => void eliminaAccount()} disabled={attesa === "elimina"} className="mt-6 text-center text-xs font-semibold text-destructive">

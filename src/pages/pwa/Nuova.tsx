@@ -293,7 +293,7 @@ export function PwaNuova() {
           type="button"
           onClick={() => void creaScheda()}
           disabled={elaboro || ascolto !== "no"}
-          className="mt-5 flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-primary font-display text-base font-bold text-primary-foreground shadow-glow disabled:opacity-50"
+          className="mt-5 flex min-h-14 w-full items-center justify-center gap-2 rounded-lg bg-primary font-display text-base font-bold text-primary-foreground shadow-glow disabled:opacity-50"
         >
           <Sparkles className="h-5 w-5" aria-hidden />
           {elaboro ? "L’assistente sta compilando…" : "Crea la scheda con l’assistente"}
@@ -331,7 +331,7 @@ export function PwaNuova() {
                 type="button"
                 onClick={() => setDanno(d.codice)}
                 className={cn(
-                  "min-h-11 rounded-full border px-2 font-display text-xs font-bold transition-colors",
+                  "min-h-11 rounded-lg border px-2 font-display text-xs font-bold transition-colors",
                   danno === d.codice ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-foreground",
                 )}
               >
@@ -341,7 +341,7 @@ export function PwaNuova() {
           </div>
         </Campo>
 
-        <div className="flex min-h-11 items-center justify-between rounded-[19px] border border-border bg-card px-4">
+        <div className="flex min-h-11 items-center justify-between rounded-xl border border-border bg-card px-4">
           <Label htmlFor="sentinella">Evento sentinella</Label>
           <Switch id="sentinella" checked={sentinella} onCheckedChange={setSentinella} />
         </div>
@@ -413,7 +413,7 @@ export function PwaNuova() {
         <button
           type="submit"
           disabled={invio}
-          className="flex min-h-14 w-full items-center justify-center rounded-full bg-primary font-display text-base font-bold text-primary-foreground shadow-glow disabled:opacity-50"
+          className="flex min-h-14 w-full items-center justify-center rounded-lg bg-primary font-display text-base font-bold text-primary-foreground shadow-glow disabled:opacity-50"
         >
           {invio ? "Invio…" : "Invia segnalazione"}
         </button>
@@ -457,7 +457,7 @@ function Azione({
   come?: "button" | "span";
 }) {
   const classi = cn(
-    "flex min-h-[124px] cursor-pointer flex-col items-center justify-center gap-2 rounded-[19px] border p-3 text-center shadow-card transition-colors",
+    "flex min-h-[124px] cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border p-3 text-center shadow-card transition-colors",
     attiva ? "border-destructive bg-destructive text-destructive-foreground" : "border-border bg-card text-foreground",
     disabled && "opacity-50",
   );

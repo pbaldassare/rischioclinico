@@ -11,7 +11,7 @@ export function MobileShell() {
   ];
 
   return (
-    <div className="mx-auto flex h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden overscroll-none border-border bg-background text-foreground sm:border-x">
+    <div className="tema-app mx-auto flex h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden overscroll-none border-border bg-background text-foreground sm:border-x">
       <main className="flex flex-1 flex-col overflow-y-auto pt-[env(safe-area-inset-top)]">
         <Outlet />
       </main>
@@ -25,7 +25,7 @@ export function MobileShell() {
                 end={end}
                 className={({ isActive }) =>
                   cn(
-                    "relative flex min-h-11 flex-col items-center gap-[3px] py-2 font-display text-[9.5px] font-bold transition-colors",
+                    "relative flex min-h-11 flex-col items-center gap-[3px] py-2 text-[10.5px] font-medium transition-colors",
                     isActive ? "text-primary" : "text-muted-foreground",
                   )
                 }
@@ -34,8 +34,8 @@ export function MobileShell() {
                   <>
                     <span
                       className={cn(
-                        "grid h-[27px] w-11 place-items-center rounded-full transition-colors",
-                        isActive && "bg-primary/12",
+                        "grid h-[27px] w-11 place-items-center rounded-lg transition-colors",
+                        isActive && "bg-secondary",
                       )}
                     >
                       <Icona className="h-[18px] w-[18px]" aria-hidden />

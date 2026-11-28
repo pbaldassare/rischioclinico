@@ -37,7 +37,7 @@ export function PwaHome() {
 
       <Link
         to="/app/nuova"
-        className="mt-5 flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-primary font-display text-base font-bold text-primary-foreground shadow-glow"
+        className="mt-5 flex min-h-14 w-full items-center justify-center gap-2 rounded-lg bg-primary font-display text-base font-bold text-primary-foreground shadow-glow"
       >
         <PlusCircle className="h-5 w-5" aria-hidden />
         Nuova segnalazione
