@@ -1,6 +1,6 @@
 # Rischio clinico
 
-Piattaforma web (PWA + backoffice) per la gestione del rischio clinico-assicurativo: segnalazioni, fotografia del rischio, sinistri ed eventi sentinella.
+Piattaforma web (PWA + backoffice) per la gestione del rischio clinico-assicurativo: segnalazioni, sinistri, eventi sentinella e relazione annuale.
 
 Una sola app Vite + React + TypeScript. Tre livelli: **Admin**, **ASL / presidio**, **Operatore**. Su telefono (colonna max 480px, tab bar in basso) è la PWA di reparto; su desktop il backoffice con sidebar.
 
@@ -50,8 +50,8 @@ I vecchi ruoli (referente, direzione, regione, broker, amministrativo sinistri) 
 
 - `/` login email + password, con pulsante **Installa l’app**
 - `/installa` pagina pubblica di installazione PWA
-- `/app` PWA operatore: home, nuova segnalazione, coda, FDR se abilitato, profilo
-- `/bo` backoffice Admin/ASL: dashboard, segnalazioni, sinistri, FDR, report, sentinella, legale; Admin anche anagrafica ASL; ASL anche reparti e operatori
+- `/app` PWA operatore: home, nuova segnalazione con l’assistente, profilo
+- `/bo` backoffice Admin/ASL: dashboard, segnalazioni, sinistri, registro dei rischi, report (relazione annuale), sentinella, legale, reparti; Admin anche anagrafica ASL; ASL anche operatori. La fotografia del rischio (FDR) è nascosta: tabelle e dati restano.
 
 Origine pubblica: `https://rischioclinico.pages.dev/`. Installazione: `https://rischioclinico.pages.dev/installa`. L’app installata parte da `/app`.
 

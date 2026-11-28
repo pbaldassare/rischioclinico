@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { ClipboardList, FolderHeart, Landmark, ShieldAlert } from "lucide-react";
+import { ClipboardList, Landmark, ShieldAlert } from "lucide-react";
 import { Link } from "react-router-dom";
 import { KpiCard } from "@/components/KpiCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { fetchEventiSentinella, fetchFotografie, fetchSegnalazioni, fetchSinistri } from "@/lib/queries";
+import { fetchEventiSentinella, fetchSegnalazioni, fetchSinistri } from "@/lib/queries";
 import { useAuth } from "@/lib/auth";
 import { filtriPerProfilo } from "@/lib/ambito";
 import { formatEuro, sommaMovimenti } from "@/lib/format";
@@ -16,7 +16,6 @@ export function BoDashboard() {
   const filtri = filtriPerProfilo(profilo);
   const seg = useQuery({ queryKey: ["segnalazioni", filtri], queryFn: () => fetchSegnalazioni(filtri) });
   const sin = useQuery({ queryKey: ["sinistri", filtri], queryFn: () => fetchSinistri(filtri) });
-  const fdr = useQuery({ queryKey: ["fdr", filtri], queryFn: () => fetchFotografie(filtri) });
   const es = useQuery({ queryKey: ["sentinella", filtri], queryFn: () => fetchEventiSentinella(filtri) });
 
   const lista = seg.data ?? [];
@@ -32,10 +31,9 @@ export function BoDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="griglia-kpi grid gap-4 md:grid-cols-4">
+      <div className="griglia-kpi grid gap-4 md:grid-cols-3">
         <KpiCard icon={ClipboardList} titolo="Segnalazioni" valore={lista.length} nota={`${lista.filter((s) => s.stato === "inviata").length} da prendere`} />
         <KpiCard icon={Landmark} titolo="Sinistri RIS+LIQ" valore={formatEuro(risLiq)} tinta="text-accent" />
-        <KpiCard icon={FolderHeart} titolo="FDR" valore={fdr.data?.length ?? 0} />
         <KpiCard icon={ShieldAlert} titolo="Eventi sentinella" valore={es.data?.length ?? 0} tinta="text-destructive" />
       </div>
 
@@ -58,11 +56,10 @@ export function BoDashboard() {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-xl">I quattro moduli</CardTitle>
+            <CardTitle className="text-xl">I tre moduli</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3 sm:grid-cols-2">
             <Modulo to="/bo/segnalazioni" titolo="Segnalazioni" testo="Coda, RCA, azioni" />
-            <Modulo to="/bo/fdr" titolo="Fotografia del rischio" testo="Checklist per struttura" />
             <Modulo to="/bo/sinistri" titolo="Sinistri" testo="Denunce e importi" />
             <Modulo to="/bo/legale" titolo="Pratiche legali" testo="Cause collegate ai sinistri" />
           </CardContent>

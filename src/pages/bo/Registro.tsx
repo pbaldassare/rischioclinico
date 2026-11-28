@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { FiltriAmbito } from "@/components/FiltriAmbito";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { fetchFotografie, fetchSegnalazioni, fetchSinistri, fetchVociFotografie, rcaDi } from "@/lib/queries";
+import { fetchSegnalazioni, fetchSinistri, rcaDi } from "@/lib/queries";
 import { useAuth } from "@/lib/auth";
 import { filtriPerProfilo } from "@/lib/ambito";
 import { useCatalog } from "@/lib/catalog";
@@ -27,13 +27,6 @@ export function BoRegistro() {
   const [filtri, setFiltri] = useState<Filtri>(() => filtriPerProfilo(profilo));
   const seg = useQuery({ queryKey: ["segnalazioni", filtri], queryFn: () => fetchSegnalazioni(filtri) });
   const sin = useQuery({ queryKey: ["sinistri", filtri], queryFn: () => fetchSinistri(filtri) });
-  const fdr = useQuery({ queryKey: ["fdr", filtri], queryFn: () => fetchFotografie(filtri) });
-  const idsFdr = (fdr.data ?? []).map((f) => f.id);
-  const voci = useQuery({
-    queryKey: ["fotografie-voci", idsFdr],
-    queryFn: () => fetchVociFotografie(idsFdr),
-    enabled: fdr.isSuccess,
-  });
 
   const righe = useMemo(() => {
     const reparti = cat.unita.filter((u) => {
@@ -47,10 +40,6 @@ export function BoRegistro() {
         const azioni = s.flatMap((x) => x.azioni ?? []);
         const aperte = azioni.filter((a) => a.stato !== "verificata");
         const sinistri = (sin.data ?? []).filter((x) => x.unita_operativa_id === u.id);
-        // Fotografia del rischio: quota di voci non conformi o parziali nell'ultima del reparto.
-        const ultima = (fdr.data ?? []).find((f) => f.unita_operativa_id === u.id);
-        const risposte = (voci.data ?? []).filter((v) => v.fotografia_id === ultima?.id && v.risposta);
-        const nonConformi = risposte.filter((v) => v.risposta === "Non conforme" || v.risposta === "Parziale").length;
         return {
           id: u.id,
           reparto: u.nome,
@@ -66,18 +55,17 @@ export function BoRegistro() {
           azioniVerificate: azioni.filter((a) => a.stato === "verificata").length,
           sinistri: sinistri.length,
           costo: sinistri.reduce((acc, x) => acc + sommaMovimenti(x.movimenti, ["riservato", "liquidato"]), 0),
-          fdr: risposte.length ? Math.round((nonConformi / risposte.length) * 100) : null,
         };
       })
       .sort((a, b) => (b.indiceMax ?? 0) - (a.indiceMax ?? 0) || b.costo - a.costo || b.segnalazioni - a.segnalazioni);
-  }, [cat, filtri, seg.data, sin.data, fdr.data, voci.data]);
+  }, [cat, filtri, seg.data, sin.data]);
 
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
         Un reparto per riga, ordinati dal rischio più alto. Il rischio è l’indice P × M × R più alto tra le segnalazioni
-        analizzate (basso fino a 4, medio da 6 a 9, alto da 12). Si aggiorna da solo quando cambiano analisi, azioni,
-        sinistri o checklist.
+        analizzate (basso fino a 4, medio da 6 a 9, alto da 12). Si aggiorna da solo quando cambiano analisi, azioni o
+        sinistri.
       </p>
       <FiltriAmbito value={filtri} onChange={setFiltri} mostraAzienda={profilo?.ruolo === "admin"} />
       <Card>
@@ -91,7 +79,6 @@ export function BoRegistro() {
                 <TableHead>Azioni aperte</TableHead>
                 <TableHead>Verificate</TableHead>
                 <TableHead>Sinistri</TableHead>
-                <TableHead>Non conformità checklist</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -124,7 +111,6 @@ export function BoRegistro() {
                       {r.sinistri}
                       {r.sinistri ? <p className="text-xs text-muted-foreground">{formatEuro(r.costo)}</p> : null}
                     </TableCell>
-                    <TableCell>{r.fdr == null ? "—" : `${r.fdr}%`}</TableCell>
                   </TableRow>
                 );
               })}

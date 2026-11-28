@@ -20,8 +20,6 @@ const BoSegnalazioni = lazy(() => import("@/pages/bo/Segnalazioni").then((m) => 
 const BoSegnalazioneDettaglio = lazy(() => import("@/pages/bo/SegnalazioneDettaglio").then((m) => ({ default: m.BoSegnalazioneDettaglio })));
 const BoSinistri = lazy(() => import("@/pages/bo/Sinistri").then((m) => ({ default: m.BoSinistri })));
 const BoSinistroDettaglio = lazy(() => import("@/pages/bo/SinistroDettaglio").then((m) => ({ default: m.BoSinistroDettaglio })));
-const BoFdr = lazy(() => import("@/pages/bo/Fdr").then((m) => ({ default: m.BoFdr })));
-const BoFdrDettaglio = lazy(() => import("@/pages/bo/FdrDettaglio").then((m) => ({ default: m.BoFdrDettaglio })));
 const BoReport = lazy(() => import("@/pages/bo/Report").then((m) => ({ default: m.BoReport })));
 const BoReportNuovo = lazy(() => import("@/pages/bo/Report").then((m) => ({ default: m.BoReportNuovo })));
 const BoReportSalvato = lazy(() => import("@/pages/bo/Report").then((m) => ({ default: m.BoReportSalvato })));
@@ -82,8 +80,6 @@ export default function App() {
             <Route path="segnalazioni/:id" element={<BoSegnalazioneDettaglio />} />
             <Route path="sinistri" element={<BoSinistri />} />
             <Route path="sinistri/:id" element={<BoSinistroDettaglio />} />
-            <Route path="fdr" element={<BoFdr />} />
-            <Route path="fdr/:id" element={<BoFdrDettaglio />} />
             <Route path="report" element={<BoReport />} />
             <Route path="report/nuovo" element={<BoReportNuovo />} />
             <Route path="report/:id" element={<BoReportSalvato />} />
