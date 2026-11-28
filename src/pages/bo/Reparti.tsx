@@ -16,6 +16,9 @@ import { aggiornaAssegnazione, aggiungiAssegnazione, creaReparto, fetchOperatori
 import { AttivitaOspedale } from "@/components/AttivitaOspedale";
 import type { Privilegio, Profile, UnitaOperativa } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { DISCIPLINE } from "@/lib/reparti";
+
+const AREE = [...new Set(DISCIPLINE.map((d) => d.area))];
 
 /** Reparti per ospedale, con gli operatori collegati e i loro compiti. L'ASL vede la propria, l'Admin tutte. */
 export function BoReparti() {
@@ -27,7 +30,10 @@ export function BoReparti() {
   const aziendaScelta = admin ? aziendaId || cat.aziende[0]?.id : profilo?.azienda_id;
   const presidi = cat.presidi.filter((p) => !aziendaScelta || p.azienda_id === aziendaScelta);
   const [presidioId, setPresidioId] = useState("");
+  const [disciplina, setDisciplina] = useState("");
   const [nome, setNome] = useState("");
+  const scelta = DISCIPLINE.find((d) => d.codice === disciplina);
+  const nomeNuovo = disciplina === "altro" ? nome.trim() : (scelta?.nome ?? "");
   const presidioNuovo = presidi.some((p) => p.id === presidioId) ? presidioId : (presidi[0]?.id ?? "");
 
   const operatori = useQuery({ queryKey: ["operatori"], queryFn: fetchOperatori });
@@ -40,10 +46,11 @@ export function BoReparti() {
   }, [seg.data]);
 
   const crea = useMutation({
-    mutationFn: () => creaReparto({ presidio_id: presidioNuovo, nome }),
+    mutationFn: () => creaReparto({ presidio_id: presidioNuovo, nome: nomeNuovo, codice_disciplina: scelta?.codice }),
     onSuccess: () => {
       toast.success("Reparto creato");
       setNome("");
+      setDisciplina("");
       void qc.invalidateQueries({ queryKey: ["unita"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -120,11 +127,29 @@ export function BoReparti() {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Nome reparto</Label>
-            <Input value={nome} onChange={(e) => setNome(e.target.value)} />
+            <Label>Reparto</Label>
+            <Select value={disciplina || undefined} onValueChange={setDisciplina}>
+              <SelectTrigger>
+                <SelectValue placeholder="Scegli dall’elenco" />
+              </SelectTrigger>
+              <SelectContent>
+                {AREE.map((area) => (
+                  <div key={area}>
+                    <p className="px-2 pt-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{area}</p>
+                    {DISCIPLINE.filter((d) => d.area === area).map((d) => (
+                      <SelectItem key={d.codice} value={d.codice}>
+                        {d.nome}
+                      </SelectItem>
+                    ))}
+                  </div>
+                ))}
+                <SelectItem value="altro">Altro: scrivo io il nome</SelectItem>
+              </SelectContent>
+            </Select>
+            {disciplina === "altro" ? <Input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome del reparto" /> : null}
           </div>
           <div className="flex items-end">
-            <Button className="w-full" disabled={!presidioNuovo || !nome.trim() || crea.isPending} onClick={() => crea.mutate()}>
+            <Button className="w-full" disabled={!presidioNuovo || !nomeNuovo || crea.isPending} onClick={() => crea.mutate()}>
               Aggiungi
             </Button>
           </div>
