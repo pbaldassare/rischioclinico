@@ -7,10 +7,20 @@ export interface AssistenteRichiesta {
   contesto?: Record<string, unknown>;
 }
 
+export interface SchedaProposta {
+  tipo_evento?: string;
+  danno?: "nessuno" | "lieve" | "grave";
+  fase_cura?: string;
+  luogo?: string;
+  sentinella?: boolean;
+  tipo_sentinella?: number | null;
+}
+
 export interface AssistenteRisposta {
   fonte: "modello" | "modello_locale";
   avviso: string;
   testo: string;
+  scheda?: SchedaProposta;
   p?: number;
   m?: number;
   r?: number;
@@ -78,11 +88,15 @@ function bozzaLocale(tipo: AssistenteTipo, testo: string, contesto: Record<strin
       testo: `Sintesi ${livello}: ${nSeg} segnalazioni, ${nSin} sinistri, RIS+LIQ ${risLiq}. Cadute e identificazione restano le aree da presidiare. Nessun atto è stato scritto in archivio.`,
     };
   }
-  const nucleo = testo || "evento in pronto soccorso durante l’assistenza";
+  const nucleo = testo || "evento in reparto durante l’assistenza";
+  const t = testo.toLowerCase();
+  const tipo_evento = /cad|scivol/.test(t) ? "caduta" : /farmac|terapia|dose/.test(t) ? "gestione_farmaco" : /identif|braccial|scambi/.test(t) ? "identificazione" : /aggress|violen/.test(t) ? "violenza_operatore" : /infezion/.test(t) ? "infezione" : "altro";
+  const danno = /deces|mort|frattur|grave|trasferi/.test(t) ? "grave" : /lesion|trauma|ematoma|dolore/.test(t) ? "lieve" : "nessuno";
   return {
     fonte: "modello_locale",
     avviso,
-    testo: `Durante il turno, ${nucleo.replace(/^durante\s+/i, "")}. Paziente identificato, luogo pronto soccorso. Dinamica da confermare in scheda (orario, testimoni, esito).`,
+    testo: `Durante il turno, ${nucleo.replace(/^durante\s+/i, "")}. Dinamica da confermare in scheda (orario, testimoni, esito).`,
+    scheda: { tipo_evento, danno, fase_cura: "assistenza", sentinella: false, tipo_sentinella: null },
   };
 }
 
@@ -95,9 +109,19 @@ async function conModello(
 ): Promise<AssistenteRisposta> {
   const system =
     "Sei l'assistente della piattaforma Rischio clinico. Proponi solo bozze in italiano. Non inventare dati identificativi del paziente. Non salvare nulla: l'operatore conferma. Rispondi solo JSON.";
+  const elenchi = (contesto.elenchi ?? {}) as Record<string, { codice: string | number; etichetta: string }[]>;
+  const voci = (nome: string) => (elenchi[nome] ?? []).map((v) => `${v.codice}=${v.etichetta}`).join(", ");
   const userText =
     tipo === "segnalazione"
-      ? `Trascrizione/foto: ${testo || "(solo immagini)"}. Proponi una dinamica breve per una scheda di incident reporting. JSON { "testo": string }`
+      ? `Materiale raccolto dall'operatore (trascrizione vocale, appunti, foto o fotogrammi di video): ${testo || "(solo immagini)"}.
+Compila una scheda di incident reporting. Rispondi JSON:
+{ "testo": dinamica in italiano, 3-5 frasi, fatti osservati, nessun nome di paziente,
+  "tipo_evento": uno tra [${voci("tipi")}],
+  "danno": "nessuno" | "lieve" | "grave",
+  "fase_cura": uno tra [${voci("fasi")}],
+  "luogo": uno tra [${voci("luoghi")}],
+  "sentinella": true solo se rientra negli eventi sentinella del Ministero,
+  "tipo_sentinella": numero dell'evento sentinella o null — elenco: ${voci("sentinelle")} }`
       : tipo === "rca"
         ? `Dinamica: ${contesto.dinamica ?? testo}. Impatto: ${contesto.impatto ?? ""}. JSON { "testo": string, "p": 1|2|3, "m": 1|2|3, "r": 1|2|3, "fattori": string }`
         : `Livello ${contesto.livello}. Segnalazioni ${contesto.segnalazioni}, sinistri ${contesto.sinistri}, RIS+LIQ ${contesto.risLiq}. JSON { "testo": string }`;
@@ -128,7 +152,22 @@ async function conModello(
   });
   if (!res.ok) throw new Error("modello");
   const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-  const parsed = JSON.parse(json.choices?.[0]?.message?.content || "{}") as AssistenteRisposta;
+  const parsed = JSON.parse(json.choices?.[0]?.message?.content || "{}") as AssistenteRisposta & SchedaProposta;
+  const valido = (nome: string, v: unknown) => {
+    const lista = elenchi[nome];
+    return !lista || lista.some((x) => String(x.codice) === String(v)) ? (v as string) : undefined;
+  };
+  const scheda: SchedaProposta | undefined =
+    tipo === "segnalazione"
+      ? {
+          tipo_evento: valido("tipi", parsed.tipo_evento),
+          danno: parsed.danno === "lieve" || parsed.danno === "grave" ? parsed.danno : "nessuno",
+          fase_cura: valido("fasi", parsed.fase_cura),
+          luogo: valido("luoghi", parsed.luogo),
+          sentinella: Boolean(parsed.sentinella),
+          tipo_sentinella: parsed.sentinella && valido("sentinelle", parsed.tipo_sentinella) ? Number(parsed.tipo_sentinella) : null,
+        }
+      : undefined;
   const scala = (n: unknown, fallback: number) => {
     const v = Number(n);
     return v === 1 || v === 2 || v === 3 ? v : fallback;
@@ -137,6 +176,7 @@ async function conModello(
     fonte: "modello",
     avviso: "Bozza dell’assistente. Non è un atto ufficiale: rivedi e conferma prima di salvare.",
     testo: String(parsed.testo || "").trim() || bozzaLocale(tipo, testo, contesto).testo,
+    scheda,
     p: tipo === "rca" ? scala(parsed.p, 2) : undefined,
     m: tipo === "rca" ? scala(parsed.m, 2) : undefined,
     r: tipo === "rca" ? scala(parsed.r, 2) : undefined,

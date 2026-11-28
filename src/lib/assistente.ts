@@ -7,10 +7,20 @@ export interface AssistenteRichiesta {
   contesto?: Record<string, unknown>;
 }
 
+export interface SchedaProposta {
+  tipo_evento?: string;
+  danno?: "nessuno" | "lieve" | "grave";
+  fase_cura?: string;
+  luogo?: string;
+  sentinella?: boolean;
+  tipo_sentinella?: number | null;
+}
+
 export interface AssistenteRisposta {
   fonte: "modello" | "modello_locale";
   avviso: string;
   testo: string;
+  scheda?: SchedaProposta;
   p?: number;
   m?: number;
   r?: number;

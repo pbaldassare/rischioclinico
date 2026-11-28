@@ -18,6 +18,41 @@ export async function comprimiImmagine(file: File, lato = 1600): Promise<File> {
   }
 }
 
+/** Tre fotogrammi di un video (inizio, metà, fine) in JPEG base64, per darli all'assistente. */
+export function fotogrammiVideo(file: File, n = 3, lato = 1024): Promise<{ mime: string; data: string }[]> {
+  return new Promise((resolve) => {
+    const video = document.createElement("video");
+    const url = URL.createObjectURL(file);
+    const out: { mime: string; data: string }[] = [];
+    const fine = () => {
+      URL.revokeObjectURL(url);
+      resolve(out);
+    };
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = "auto";
+    video.onerror = fine;
+    video.onloadedmetadata = () => {
+      const durata = Number.isFinite(video.duration) ? video.duration : 0;
+      const tempi = Array.from({ length: n }, (_, i) => (durata * (i + 0.5)) / n);
+      const scala = Math.min(1, lato / Math.max(video.videoWidth, video.videoHeight, 1));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(video.videoWidth * scala);
+      canvas.height = Math.round(video.videoHeight * scala);
+      let i = 0;
+      video.onseeked = () => {
+        canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
+        out.push({ mime: "image/jpeg", data: canvas.toDataURL("image/jpeg", 0.8).split(",")[1] });
+        i += 1;
+        if (i < tempi.length) video.currentTime = tempi[i];
+        else fine();
+      };
+      video.currentTime = tempi[0];
+    };
+    video.src = url;
+  });
+}
+
 export async function caricaAllegati(segnalazioneId: string, files: File[]) {
   for (const originale of files) {
     const file = await comprimiImmagine(originale);
