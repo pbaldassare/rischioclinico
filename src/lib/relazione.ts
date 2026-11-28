@@ -202,7 +202,7 @@ export function calcolaRelazione(input: {
   if (varSeg != null) commenti.push(`Le segnalazioni passano da ${segPrev.length} a ${segN.length} (${segno(varSeg)}% sul ${anno - 1}).`);
   else commenti.push(`${segN.length} segnalazioni nel ${anno}; nessun dato del ${anno - 1} per il confronto.`);
   const nessunDanno = esiti.find((e) => e.tipologia === "cadute")?.conteggi.nessuno ?? 0;
-  if (contaN.cadute) commenti.push(`Le cadute sono ${contaN.cadute}${ricN ? `, pari a ${tasso(contaN.cadute, ricN, 10000)?.toLocaleString("it-IT")} ogni 10.000 ricoveri` : ""}; il ${pct(nessunDanno, contaN.cadute).toLocaleString("it-IT")}% non ha prodotto danni.`);
+  if (contaN.cadute) commenti.push(`Le cadute sono ${contaN.cadute}${ricN ? `, pari a ${tasso(contaN.cadute, ricN, 10000)?.toLocaleString("it-IT")} ogni 10.000 ricoveri` : ""}; ${nessunDanno ? `il ${pct(nessunDanno, contaN.cadute).toLocaleString("it-IT")}% non ha prodotto danni` : "tutte hanno prodotto un danno"}.`);
   if (contaPrev.near_miss && contaN.near_miss < contaPrev.near_miss) commenti.push("Il calo dei near miss va monitorato: è un segnale di minore propensione a segnalare, non di minore rischio.");
   const azN = azioni[2];
   if (azN.verificate) commenti.push(`Delle ${azN.azioni} azioni correttive del ${anno}, ${azN.verificate} sono state verificate; il ${azN.efficaci.toLocaleString("it-IT")}% è risultato efficace.`);

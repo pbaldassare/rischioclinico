@@ -2,7 +2,7 @@
   "id": "/app",
   "name": "Rischio clinico",
   "short_name": "Rischio",
-  "description": "Segnalazioni, FDR, sinistri ed eventi sentinella per le Aziende Sanitarie.",
+  "description": "Segnalazioni, sinistri ed eventi sentinella per le Aziende Sanitarie.",
   "lang": "it",
   "dir": "ltr",
   "start_url": "/app",

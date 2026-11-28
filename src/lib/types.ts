@@ -163,37 +163,6 @@ export interface Sinistro {
   movimenti?: MovimentoEconomico[] | null;
 }
 
-export interface FotografiaRischio {
-  id: string;
-  azienda_id: string;
-  presidio_id: string | null;
-  unita_operativa_id: string | null;
-  modello_id: string | null;
-  periodo_dal: string | null;
-  periodo_al: string | null;
-  stato: string;
-  created_at: string;
-  presidio?: Presidio | null;
-  unita?: UnitaOperativa | null;
-  modello?: { id: string; nome: string; versione: string } | null;
-}
-
-export interface VoceFotografia {
-  id: string;
-  fotografia_id: string;
-  voce_modello_id: string | null;
-  risposta: string | null;
-  nota: string | null;
-}
-
-export interface VoceModello {
-  id: string;
-  modello_id: string;
-  ordine: number;
-  testo: string;
-  area: string | null;
-}
-
 export interface EventoSentinella {
   id: string;
   azienda_id: string;

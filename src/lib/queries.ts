@@ -8,7 +8,6 @@ import type {
   EventoSentinella,
   FasciaImporto,
   FiltriAmbito,
-  FotografiaRischio,
   PraticaLegale,
   Presidio,
   Privilegio,
@@ -16,9 +15,7 @@ import type {
   Segnalazione,
   Sinistro,
   TipoSentinella,
-  UnitaOperativa,
-  VoceFotografia,
-  VoceModello, ReportSalvato } from "./types";
+  UnitaOperativa, ReportSalvato } from "./types";
 
 const PROFILE_SELECT = `
   *,
@@ -186,55 +183,6 @@ export async function fetchSinistroDaSegnalazione(segnalazioneId: string) {
     .maybeSingle();
   if (error) throw error;
   return data as { id: string; codice_interno: string | null } | null;
-}
-
-export async function fetchFotografie(filtri?: FiltriAmbito) {
-  let q = supabase
-    .from("fotografie_rischio")
-    .select(
-      `*,
-      presidio:presidi(id,nome,azienda_id),
-      unita:unita_operative(id,nome,presidio_id),
-      modello:modelli_checklist(id,nome,versione)`,
-    )
-    .order("created_at", { ascending: false });
-  if (filtri?.aziendaId) q = q.eq("azienda_id", filtri.aziendaId);
-  if (filtri?.presidioId) q = q.eq("presidio_id", filtri.presidioId);
-  if (filtri?.unitaId) q = q.eq("unita_operativa_id", filtri.unitaId);
-  const { data, error } = await q;
-  if (error) throw error;
-  return (data ?? []) as FotografiaRischio[];
-}
-
-export async function fetchFotografia(id: string) {
-  const { data, error } = await supabase
-    .from("fotografie_rischio")
-    .select(
-      `*,
-      presidio:presidi(id,nome,azienda_id),
-      unita:unita_operative(id,nome,presidio_id),
-      modello:modelli_checklist(id,nome,versione)`,
-    )
-    .eq("id", id)
-    .maybeSingle();
-  if (error) throw error;
-  return data as FotografiaRischio | null;
-}
-
-export async function fetchVociFotografia(id: string) {
-  const { data, error } = await supabase.from("fotografie_voci").select("*").eq("fotografia_id", id);
-  if (error) throw error;
-  return (data ?? []) as VoceFotografia[];
-}
-
-export async function fetchVociModello(modelloId: string) {
-  const { data, error } = await supabase
-    .from("voci_modello_checklist")
-    .select("*")
-    .eq("modello_id", modelloId)
-    .order("ordine");
-  if (error) throw error;
-  return (data ?? []) as VoceModello[];
 }
 
 export async function fetchEventiSentinella(filtri?: FiltriAmbito) {
@@ -542,36 +490,6 @@ export async function fetchProfiliAzienda(aziendaId: string) {
     .order("nome");
   if (error) throw error;
   return (data ?? []) as Pick<Profile, "id" | "nome" | "email" | "ruolo">[];
-}
-
-export async function fetchModelliChecklist() {
-  const { data, error } = await supabase.from("modelli_checklist").select("id, nome, versione").eq("attivo", true).order("nome");
-  if (error) throw error;
-  return (data ?? []) as { id: string; nome: string; versione: string }[];
-}
-
-export async function creaFotografia(input: {
-  azienda_id: string;
-  presidio_id: string;
-  unita_operativa_id: string | null;
-  modello_id: string;
-  periodo_dal: string | null;
-  periodo_al: string | null;
-}) {
-  const { data, error } = await supabase
-    .from("fotografie_rischio")
-    .insert({ ...input, stato: "bozza" })
-    .select("id")
-    .single();
-  if (error) throw error;
-  return data.id as string;
-}
-
-export async function fetchVociFotografie(ids: string[]) {
-  if (!ids.length) return [];
-  const { data, error } = await supabase.from("fotografie_voci").select("*").in("fotografia_id", ids);
-  if (error) throw error;
-  return (data ?? []) as VoceFotografia[];
 }
 
 export async function fetchAttivitaTutte() {

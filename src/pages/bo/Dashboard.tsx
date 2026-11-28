@@ -17,12 +17,14 @@ import {
   fetchSinistri,
 } from "@/lib/queries";
 import { useAuth } from "@/lib/auth";
+import { useCatalog } from "@/lib/catalog";
 import { filtriPerProfilo } from "@/lib/ambito";
 import { formatEuro, sommaMovimenti } from "@/lib/format";
 import { formatData } from "@/lib/format";
 
 export function BoDashboard() {
   const { profilo } = useAuth();
+  const cat = useCatalog();
   const filtri = filtriPerProfilo(profilo);
   const seg = useQuery({
     queryKey: ["segnalazioni", filtri],
@@ -111,8 +113,9 @@ export function BoDashboard() {
                       className="font-semibold text-primary"
                       to={`/bo/segnalazioni/${s.id}`}
                     >
-                      {s.dinamica}
+                      {cat.etichetta("tipo_evento_ir", s.tipo_evento_codice)}
                     </Link>
+                    <p className="line-clamp-2 text-xs text-muted-foreground">{s.dinamica}</p>
                   </TableCell>
                   <TableCell>{s.presidio?.nome}</TableCell>
                   <TableCell>{formatData(s.data_ora_evento, true)}</TableCell>

@@ -1,6 +1,6 @@
 import { AlertTriangle, Check, Clock, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ETICHETTE_STATO_FDR, ETICHETTE_STATO_SEGNALAZIONE, ETICHETTE_STATO_SINISTRO, etichetta } from "@/lib/labels";
+import { ETICHETTE_STATO_SEGNALAZIONE, ETICHETTE_STATO_SINISTRO, etichetta } from "@/lib/labels";
 
 const CLASSI: Record<string, string> = {
   inviata: "bg-info/10 text-info-ink border-info/20",
@@ -53,8 +53,4 @@ export function StatoBadge({
 
 export function pillSinistro(stato?: string | null) {
   return <StatoBadge stato={stato} mappa={ETICHETTE_STATO_SINISTRO} />;
-}
-
-export function pillFdr(stato?: string | null) {
-  return <StatoBadge stato={stato} mappa={ETICHETTE_STATO_FDR} />;
 }

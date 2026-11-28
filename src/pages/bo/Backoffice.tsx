@@ -64,7 +64,7 @@ export function Backoffice() {
           attiva === "/bo"
             ? eAdmin(profilo)
               ? "Cruscotto di tutte le ASL: statistiche, richieste e sinistri."
-              : "Cruscotto della tua ASL: segnalazioni, sinistri, FDR e sentinella."
+              : "Cruscotto della tua ASL: segnalazioni, sinistri ed eventi sentinella."
             : undefined
         }
       >

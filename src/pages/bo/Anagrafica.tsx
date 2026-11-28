@@ -202,7 +202,7 @@ export function BoAnagrafica() {
             <TableBody>
               {(gestori.data ?? []).map((u) => (
                 <TableRow key={u.id}>
-                  <TableCell>{u.nome}</TableCell>
+                  <TableCell>{[u.nome, u.cognome].filter(Boolean).join(" ")}</TableCell>
                   <TableCell>{u.email}</TableCell>
                   <TableCell>{cat.nomeAzienda(u.azienda_id)}</TableCell>
                 </TableRow>

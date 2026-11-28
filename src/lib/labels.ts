@@ -20,13 +20,6 @@ export const ETICHETTE_STATO_SINISTRO: Record<string, string> = {
   chiuso_senza_seguito: "Chiuso senza seguito",
 };
 
-export const ETICHETTE_STATO_FDR: Record<string, string> = {
-  bozza: "Bozza",
-  in_corso: "In corso",
-  completata: "Completata",
-  validata: "Validata",
-};
-
 export const ETICHETTE_STATO_AZIONE: Record<string, string> = {
   aperta: "Aperta",
   in_corso: "In corso",
