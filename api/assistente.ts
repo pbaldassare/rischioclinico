@@ -17,10 +17,10 @@ export interface AssistenteRisposta {
   fattori?: string;
 }
 
-export async function handleAssistente(body: AssistenteRichiesta): Promise<AssistenteRisposta> {
+export async function handleAssistente(body: AssistenteRichiesta, chiave?: string): Promise<AssistenteRisposta> {
   const tipo = body.tipo ?? "segnalazione";
   const testo = (body.testo ?? "").trim();
-  const key = process.env.OPENAI_API_KEY?.trim();
+  const key = chiave?.trim();
   if (key) {
     try {
       return await conModello(key, tipo, testo, body.immagini ?? [], body.contesto ?? {});
@@ -32,9 +32,23 @@ export async function handleAssistente(body: AssistenteRichiesta): Promise<Assis
   return bozzaLocale(tipo, testo, body.contesto ?? {});
 }
 
-export async function POST(request: Request) {
-  const body = (await request.json()) as AssistenteRichiesta;
-  return Response.json(await handleAssistente(body));
+/** Audio registrato dal browser -> testo italiano via Whisper. Senza chiave risponde 503. */
+export async function handleTrascrizione(audio: Blob, chiave?: string): Promise<Response> {
+  const key = chiave?.trim();
+  if (!key) return Response.json({ error: "Trascrizione non configurata" }, { status: 503 });
+  const ext = audio.type.includes("mp4") ? "mp4" : audio.type.includes("ogg") ? "ogg" : "webm";
+  const form = new FormData();
+  form.append("file", audio, `audio.${ext}`);
+  form.append("model", "whisper-1");
+  form.append("language", "it");
+  const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+    method: "POST",
+    headers: { authorization: `Bearer ${key}` },
+    body: form,
+  });
+  if (!res.ok) return Response.json({ error: "Trascrizione non riuscita" }, { status: 502 });
+  const json = (await res.json()) as { text?: string };
+  return Response.json({ testo: (json.text ?? "").trim() });
 }
 
 function bozzaLocale(tipo: AssistenteTipo, testo: string, contesto: Record<string, unknown>): AssistenteRisposta {

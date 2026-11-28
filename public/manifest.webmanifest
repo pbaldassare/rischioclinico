@@ -38,14 +38,7 @@
     {
       "name": "Nuova segnalazione",
       "short_name": "Nuova",
-      "url": "/app/nuova",
-      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96", "type": "image/png" }]
-    },
-    {
-      "name": "Coda",
-      "short_name": "Coda",
-      "url": "/app/coda",
+      "url": "/app",
       "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96", "type": "image/png" }]
     }
-  ]
-}
+  ]}

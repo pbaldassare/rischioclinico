@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { CatalogProvider } from "@/lib/catalog";
@@ -6,24 +7,26 @@ import { Installa } from "@/pages/Installa";
 import { MobileShell } from "@/mobile/MobileShell";
 import { PwaNuova } from "@/pages/pwa/Nuova";
 import { PwaProfilo } from "@/pages/pwa/Profilo";
-import { Backoffice } from "@/pages/bo/Backoffice";
-import { BoDashboard } from "@/pages/bo/Dashboard";
-import { BoSegnalazioni } from "@/pages/bo/Segnalazioni";
-import { BoSegnalazioneDettaglio } from "@/pages/bo/SegnalazioneDettaglio";
-import { BoSinistri } from "@/pages/bo/Sinistri";
-import { BoSinistroDettaglio } from "@/pages/bo/SinistroDettaglio";
-import { BoFdr } from "@/pages/bo/Fdr";
-import { BoFdrDettaglio } from "@/pages/bo/FdrDettaglio";
-import { BoReport } from "@/pages/bo/Report";
-import { BoSentinella } from "@/pages/bo/Sentinella";
-import { BoLegale } from "@/pages/bo/Legale";
-import { BoLegaleDettaglio } from "@/pages/bo/LegaleDettaglio";
-import { BoAnagrafica } from "@/pages/bo/Anagrafica";
-import { BoReparti } from "@/pages/bo/Reparti";
-import { BoOperatori } from "@/pages/bo/Operatori";
-import { BoRegistro } from "@/pages/bo/Registro";
 import { Caricamento } from "@/mobile/atoms";
 import { usaPwa } from "@/lib/labels";
+
+// Il backoffice si scarica solo quando serve: la PWA operatore resta leggera.
+const Backoffice = lazy(() => import("@/pages/bo/Backoffice").then((m) => ({ default: m.Backoffice })));
+const BoDashboard = lazy(() => import("@/pages/bo/Dashboard").then((m) => ({ default: m.BoDashboard })));
+const BoSegnalazioni = lazy(() => import("@/pages/bo/Segnalazioni").then((m) => ({ default: m.BoSegnalazioni })));
+const BoSegnalazioneDettaglio = lazy(() => import("@/pages/bo/SegnalazioneDettaglio").then((m) => ({ default: m.BoSegnalazioneDettaglio })));
+const BoSinistri = lazy(() => import("@/pages/bo/Sinistri").then((m) => ({ default: m.BoSinistri })));
+const BoSinistroDettaglio = lazy(() => import("@/pages/bo/SinistroDettaglio").then((m) => ({ default: m.BoSinistroDettaglio })));
+const BoFdr = lazy(() => import("@/pages/bo/Fdr").then((m) => ({ default: m.BoFdr })));
+const BoFdrDettaglio = lazy(() => import("@/pages/bo/FdrDettaglio").then((m) => ({ default: m.BoFdrDettaglio })));
+const BoReport = lazy(() => import("@/pages/bo/Report").then((m) => ({ default: m.BoReport })));
+const BoSentinella = lazy(() => import("@/pages/bo/Sentinella").then((m) => ({ default: m.BoSentinella })));
+const BoLegale = lazy(() => import("@/pages/bo/Legale").then((m) => ({ default: m.BoLegale })));
+const BoLegaleDettaglio = lazy(() => import("@/pages/bo/LegaleDettaglio").then((m) => ({ default: m.BoLegaleDettaglio })));
+const BoAnagrafica = lazy(() => import("@/pages/bo/Anagrafica").then((m) => ({ default: m.BoAnagrafica })));
+const BoReparti = lazy(() => import("@/pages/bo/Reparti").then((m) => ({ default: m.BoReparti })));
+const BoOperatori = lazy(() => import("@/pages/bo/Operatori").then((m) => ({ default: m.BoOperatori })));
+const BoRegistro = lazy(() => import("@/pages/bo/Registro").then((m) => ({ default: m.BoRegistro })));
 
 function RequireAuth({ pwa }: { pwa?: boolean }) {
   const { profilo, caricamento, homeDopoLogin } = useAuth();
@@ -54,6 +57,7 @@ function PortaLogin() {
 export default function App() {
   return (
     <AuthProvider>
+      <Suspense fallback={<Caricamento />}>
       <Routes>
         <Route path="/" element={<PortaLogin />} />
         <Route path="/installa" element={<Installa />} />
@@ -84,6 +88,7 @@ export default function App() {
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
     </AuthProvider>
   );
 }

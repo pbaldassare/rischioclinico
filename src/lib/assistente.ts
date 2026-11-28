@@ -27,6 +27,13 @@ export async function proponiAssistente(body: AssistenteRichiesta): Promise<Assi
   return (await res.json()) as AssistenteRisposta;
 }
 
+export async function trascrivi(audio: Blob): Promise<string> {
+  const res = await fetch("/api/trascrivi", { method: "POST", headers: { "content-type": audio.type }, body: audio });
+  const json = (await res.json().catch(() => ({}))) as { testo?: string; error?: string };
+  if (!res.ok) throw new Error(json.error ?? "Trascrizione non disponibile");
+  return json.testo ?? "";
+}
+
 export function fileInBase64(file: File): Promise<{ mime: string; data: string }> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

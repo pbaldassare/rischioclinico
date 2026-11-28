@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Mic, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { fileInBase64, proponiAssistente, type AssistenteRisposta, type AssistenteRichiesta } from "@/lib/assistente";
+import { fileInBase64, proponiAssistente, trascrivi, type AssistenteRisposta, type AssistenteRichiesta } from "@/lib/assistente";
+import { comprimiImmagine } from "@/lib/allegati";
 
 export function AssistenteBozza({
   tipo,
@@ -23,7 +24,8 @@ export function AssistenteBozza({
   const [foto, setFoto] = useState<{ mime: string; data: string }[]>([]);
   const [bozza, setBozza] = useState<AssistenteRisposta | null>(null);
   const [carico, setCarico] = useState(false);
-  const [ascolto, setAscolto] = useState(false);
+  const [ascolto, setAscolto] = useState<"no" | "registro" | "trascrivo">("no");
+  const registratore = useRef<MediaRecorder | null>(null);
 
   async function proponi() {
     setCarico(true);
@@ -37,28 +39,40 @@ export function AssistenteBozza({
     }
   }
 
-  function dettato() {
-    const SR = (
-      window as unknown as {
-        SpeechRecognition?: new () => SpeechRec;
-        webkitSpeechRecognition?: new () => SpeechRec;
-      }
-    ).SpeechRecognition || (window as unknown as { webkitSpeechRecognition?: new () => SpeechRec }).webkitSpeechRecognition;
-    if (!SR) {
-      toast.error("Il dettato non è disponibile in questo browser");
+  async function dettato() {
+    if (ascolto === "registro") {
+      registratore.current?.stop();
       return;
     }
-    const rec = new SR();
-    rec.lang = "it-IT";
-    rec.interimResults = false;
-    rec.onstart = () => setAscolto(true);
-    rec.onend = () => setAscolto(false);
-    rec.onerror = () => setAscolto(false);
-    rec.onresult = (ev) => {
-      const detto = [...ev.results].map((r) => r[0].transcript).join(" ");
-      setTesto((prev) => (prev ? `${prev} ${detto}` : detto));
-    };
-    rec.start();
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      toast.error("Il dettato non e' disponibile in questo browser");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const rec = new MediaRecorder(stream);
+      const pezzi: Blob[] = [];
+      rec.ondataavailable = (e) => {
+        if (e.data.size) pezzi.push(e.data);
+      };
+      rec.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        setAscolto("trascrivo");
+        try {
+          const detto = await trascrivi(new Blob(pezzi, { type: rec.mimeType || "audio/webm" }));
+          if (detto) setTesto((prev) => (prev ? `${prev} ${detto}` : detto));
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : "Trascrizione non riuscita");
+        } finally {
+          setAscolto("no");
+        }
+      };
+      registratore.current = rec;
+      rec.start();
+      setAscolto("registro");
+    } catch {
+      toast.error("Microfono non disponibile");
+    }
   }
 
   return (
@@ -77,9 +91,15 @@ export function AssistenteBozza({
       ) : null}
       <div className="flex flex-wrap gap-2">
         {conVoce ? (
-          <Button type="button" variant="outline" size="sm" onClick={dettato}>
+          <Button
+            type="button"
+            variant={ascolto === "registro" ? "destructive" : "outline"}
+            size="sm"
+            onClick={() => void dettato()}
+            disabled={ascolto === "trascrivo"}
+          >
             <Mic className="h-4 w-4" />
-            {ascolto ? "Ascolto…" : "Dettato"}
+            {ascolto === "registro" ? "Ferma e trascrivi" : ascolto === "trascrivo" ? "Trascrivo…" : "Dettato"}
           </Button>
         ) : null}
         {conFoto ? (
@@ -93,7 +113,7 @@ export function AssistenteBozza({
               onChange={async (e) => {
                 const f = e.target.files?.[0];
                 if (!f) return;
-                setFoto([await fileInBase64(f)]);
+                setFoto([await fileInBase64(await comprimiImmagine(f, 1280))]);
                 toast.success("Foto pronta per la bozza (non in archivio)");
               }}
             />
@@ -128,14 +148,4 @@ export function AssistenteBozza({
       ) : null}
     </div>
   );
-}
-
-interface SpeechRec {
-  lang: string;
-  interimResults: boolean;
-  start: () => void;
-  onstart: (() => void) | null;
-  onend: (() => void) | null;
-  onerror: (() => void) | null;
-  onresult: ((ev: { results: { 0: { transcript: string } }[] }) => void) | null;
 }

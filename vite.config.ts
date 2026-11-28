@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react-swc";
 import { VitePWA } from "vite-plugin-pwa";
 import path from "path";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { handleAssistente, type AssistenteRichiesta } from "./api/assistente";
+import { handleAssistente, handleTrascrizione, type AssistenteRichiesta } from "./api/assistente";
 
 function assistenteLocale(): Plugin {
   const handler = async (req: IncomingMessage, res: ServerResponse) => {
@@ -19,11 +19,19 @@ function assistenteLocale(): Plugin {
     }
     const pezzi: Buffer[] = [];
     for await (const pezzo of req) pezzi.push(pezzo as Buffer);
+    const corpo = Buffer.concat(pezzi);
     try {
-      const body = JSON.parse(Buffer.concat(pezzi).toString("utf8") || "{}") as AssistenteRichiesta;
-      const out = await handleAssistente(body);
+      let out: Response;
+      if (req.url?.startsWith("/trascrivi")) {
+        const tipo = req.headers["content-type"] ?? "audio/webm";
+        out = await handleTrascrizione(new Blob([corpo], { type: tipo }), process.env.OPENAI_API_KEY);
+      } else {
+        const body = JSON.parse(corpo.toString("utf8") || "{}") as AssistenteRichiesta;
+        out = Response.json(await handleAssistente(body, process.env.OPENAI_API_KEY));
+      }
+      res.statusCode = out.status;
       res.setHeader("content-type", "application/json");
-      res.end(JSON.stringify(out));
+      res.end(await out.text());
     } catch (e) {
       res.statusCode = 500;
       res.setHeader("content-type", "application/json");
@@ -33,12 +41,12 @@ function assistenteLocale(): Plugin {
   return {
     name: "assistente-api",
     configureServer(server) {
-      server.middlewares.use("/api/assistente", (req, res) => {
+      server.middlewares.use("/api", (req, res) => {
         void handler(req, res);
       });
     },
     configurePreviewServer(server) {
-      server.middlewares.use("/api/assistente", (req, res) => {
+      server.middlewares.use("/api", (req, res) => {
         void handler(req, res);
       });
     },
