@@ -27,7 +27,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { AssistenteBozza } from "@/components/AssistenteBozza";
 
 export function BoReport() {
   const { profilo } = useAuth();
@@ -102,7 +101,6 @@ export function BoReport() {
     (a, s) => a + sommaMovimenti(s.movimenti, ["riservato", "liquidato"]),
     0,
   );
-  const [sintesi, setSintesi] = useState("");
 
   return (
     <div className="space-y-4">
@@ -113,10 +111,10 @@ export function BoReport() {
         </p>
       </div>
       <div className="flex items-start justify-between gap-3 print:hidden">
-        <p className="text-sm text-muted-foreground">
-          Stessi indicatori, ambito diverso. Livello attuale:{" "}
-          <strong>{livello}</strong>.
-        </p>
+        <div>
+          <p className="text-sm font-semibold">{livello}</p>
+          <p className="text-sm text-muted-foreground">{ambito}</p>
+        </div>
         <Button
           type="button"
           variant="outline"
@@ -153,31 +151,6 @@ export function BoReport() {
           tinta="text-accent"
         />
       </div>
-      <div className="print:hidden">
-        <AssistenteBozza
-          tipo="report"
-          contesto={{
-            livello,
-            segnalazioni: seg.data?.length ?? 0,
-            sinistri: sin.data?.length ?? 0,
-            risLiq: formatEuro(risLiq),
-          }}
-          onUsa={(b) => setSintesi(b.testo)}
-        />
-      </div>
-      {sintesi ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl">Sintesi assistente</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm leading-relaxed">{sintesi}</p>
-            <p className="mt-2 text-[10.5px] text-muted-foreground">
-              Solo consultazione: non è stata scritta in archivio.
-            </p>
-          </CardContent>
-        </Card>
-      ) : null}
       <Card>
         <CardHeader>
           <CardTitle className="text-xl">Sinistri per presidio</CardTitle>
