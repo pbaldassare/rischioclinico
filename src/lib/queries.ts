@@ -84,6 +84,18 @@ export async function fetchClassificazioni() {
   return (data ?? []) as Classificazione[];
 }
 
+export async function creaTipoSentinella(input: { etichetta: string; descrizione: string | null; azienda_id: string | null }) {
+  const { data: max } = await supabase.from("tipi_sentinella").select("codice").order("codice", { ascending: false }).limit(1).maybeSingle();
+  const codice = Math.max(23, Number(max?.codice ?? 0)) + 1;
+  const { error } = await supabase.from("tipi_sentinella").insert({ codice, fonte: "aggiuntivo", attivo: true, ...input });
+  if (error) throw error;
+}
+
+export async function disattivaTipoSentinella(codice: number) {
+  const { error } = await supabase.from("tipi_sentinella").update({ attivo: false }).eq("codice", codice);
+  if (error) throw error;
+}
+
 export async function fetchTipiSentinella() {
   const { data, error } = await supabase
     .from("tipi_sentinella")

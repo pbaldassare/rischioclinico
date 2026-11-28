@@ -61,6 +61,9 @@ export interface TipoSentinella {
   codice: number;
   etichetta: string;
   attivo: boolean;
+  fonte: "ministero" | "aggiuntivo";
+  azienda_id: string | null;
+  descrizione: string | null;
 }
 
 export interface FasciaImporto {

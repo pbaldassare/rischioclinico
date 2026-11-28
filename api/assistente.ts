@@ -124,7 +124,7 @@ Compila una scheda di incident reporting. Rispondi JSON:
   "danno": "nessuno" | "lieve" | "grave",
   "fase_cura": uno tra [${voci("fasi")}],
   "luogo": uno tra [${voci("luoghi")}],
-  "sentinella": true solo se rientra negli eventi sentinella del Ministero,
+  "sentinella": true solo se rientra in uno degli eventi sentinella dell'elenco (protocollo del Ministero più quelli aggiuntivi definiti dall'ASL),
   "tipo_sentinella": numero dell'evento sentinella o null — elenco: ${voci("sentinelle")},
   "data_ora": data e ora dell'evento in ISO 8601 se il racconto dice quando (es. "stanotte alle tre", "ieri pomeriggio"), calcolata rispetto ad adesso = ${String(contesto.adesso ?? "")}; altrimenti null }
 Traduci il linguaggio di reparto nei codici: "è scivolato, è caduto, trovato a terra" = caduta; "terapia sbagliata, doppia dose, farmaco sbagliato, dimenticato" = gestione_farmaco; "braccialetto, paziente sbagliato, scambio, lato sbagliato" = identificazione; "aggressione, spinta, insulti, minacce" = violenza_operatore se verso il personale, violenza_paziente se verso un paziente; "piaga, lesione da pressione" = decubito; "se n'è andato, non si trova, fuggito" = allontanamento; "monitor rotto, pompa guasta, apparecchio" = apparecchiature; "referto in ritardo, diagnosi sbagliata" = diagnosi; "infezione, febbre dopo intervento" = infezione. Il danno: "sta bene, niente" = nessuno; "ematoma, dolore, medicato" = lieve; "frattura, trasferito, ricoverato, deceduto" = grave.`

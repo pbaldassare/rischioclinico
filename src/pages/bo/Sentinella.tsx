@@ -6,15 +6,18 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Campo, SelectElenco, SelectOpzioni, SESSO, numeroONull, vuotoANull } from "@/components/Campi";
-import type { EventoSentinella } from "@/lib/types";
+import type { EventoSentinella, TipoSentinella } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { aggiornaEventoSentinella, fetchEventiSentinella } from "@/lib/queries";
+import { aggiornaEventoSentinella, creaTipoSentinella, disattivaTipoSentinella, fetchEventiSentinella } from "@/lib/queries";
+import { eAdmin, ePresidio } from "@/lib/livelli";
+import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
 import { filtriPerProfilo } from "@/lib/ambito";
 import { useCatalog } from "@/lib/catalog";
 import { formatData } from "@/lib/format";
 import { Link } from "react-router-dom";
+import { ChevronDown } from "lucide-react";
 
 export function BoSentinella() {
   const { profilo } = useAuth();
@@ -26,31 +29,19 @@ export function BoSentinella() {
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl">Protocollo Ministero 2024 — 23 tipi</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Codice</TableHead>
-                <TableHead>Evento sentinella</TableHead>
-                <TableHead>Casi in archivio</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {cat.tipiSentinella.map((t) => (
-                <TableRow key={t.codice}>
-                  <TableCell className="font-semibold">{t.codice}</TableCell>
-                  <TableCell>{t.etichetta}</TableCell>
-                  <TableCell>{conteggi.get(t.codice) ?? 0}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <TabellaTipi
+        titolo="Protocollo Ministero 2024 — 23 tipi"
+        tipi={cat.tipiSentinella.filter((t) => t.fonte !== "aggiuntivo")}
+        conteggi={conteggi}
+      />
+      <TabellaTipi
+        titolo="Eventi aggiuntivi"
+        aperto
+        nota="Definiti dalle ASL oltre al protocollo. Li vedono tutti, entrano nelle tendine e l’assistente li riconosce come gli altri."
+        tipi={cat.tipiSentinella.filter((t) => t.fonte === "aggiuntivo")}
+        conteggi={conteggi}
+        gestione={eAdmin(profilo) || ePresidio(profilo)}
+      />
       <Card>
         <CardHeader>
           <CardTitle className="text-xl">Schede</CardTitle>
@@ -104,6 +95,121 @@ export function BoSentinella() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function TabellaTipi({
+  titolo,
+  nota,
+  tipi,
+  conteggi,
+  gestione,
+  aperto,
+}: {
+  titolo: string;
+  nota?: string;
+  tipi: TipoSentinella[];
+  conteggi: Map<number, number>;
+  gestione?: boolean;
+  aperto?: boolean;
+}) {
+  const { profilo } = useAuth();
+  const cat = useCatalog();
+  const qc = useQueryClient();
+  const [etichetta, setEtichetta] = useState("");
+  const [descrizione, setDescrizione] = useState("");
+  const ricarica = () => void qc.invalidateQueries({ queryKey: ["tipi-sentinella"] });
+  const crea = useMutation({
+    mutationFn: () => creaTipoSentinella({ etichetta: etichetta.trim(), descrizione: descrizione.trim() || null, azienda_id: profilo?.azienda_id ?? null }),
+    onSuccess: () => {
+      toast.success("Evento sentinella aggiunto");
+      setEtichetta("");
+      setDescrizione("");
+      ricarica();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const disattiva = useMutation({
+    mutationFn: (codice: number) => disattivaTipoSentinella(codice),
+    onSuccess: ricarica,
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const casiTotali = tipi.reduce((n, t) => n + (conteggi.get(t.codice) ?? 0), 0);
+  return (
+    <Card>
+      {/* Fisarmonica nativa: la pagina resta corta, il protocollo si apre solo se serve. */}
+      <details open={aperto} className="group">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-6 [&::-webkit-details-marker]:hidden">
+          <span>
+            <span className="block font-display text-xl font-semibold">{titolo}</span>
+            {nota ? <span className="block text-sm text-muted-foreground">{nota}</span> : null}
+          </span>
+          <span className="flex flex-none items-center gap-3 text-sm text-muted-foreground">
+            {tipi.length} tipi · {casiTotali} casi
+            <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" aria-hidden />
+          </span>
+        </summary>
+      <CardContent className="space-y-4">
+        {tipi.length === 0 ? <p className="text-sm text-muted-foreground">Nessun evento aggiuntivo. Aggiungilo qui sotto.</p> : null}
+        {tipi.length ? (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Codice</TableHead>
+                <TableHead>Evento sentinella</TableHead>
+                {gestione ? <TableHead>ASL</TableHead> : null}
+                <TableHead>Casi in archivio</TableHead>
+                {gestione ? <TableHead /> : null}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {tipi.map((t) => {
+                const casi = conteggi.get(t.codice) ?? 0;
+                const mio = eAdmin(profilo) || (t.azienda_id != null && t.azienda_id === profilo?.azienda_id);
+                return (
+                  <TableRow key={t.codice}>
+                    <TableCell className="font-semibold">{t.codice}</TableCell>
+                    <TableCell>
+                      {t.etichetta}
+                      {t.descrizione ? <p className="text-xs text-muted-foreground">{t.descrizione}</p> : null}
+                    </TableCell>
+                    {gestione ? <TableCell className="text-muted-foreground">{t.azienda_id ? cat.nomeAzienda(t.azienda_id) : "—"}</TableCell> : null}
+                    <TableCell>{casi}</TableCell>
+                    {gestione ? (
+                      <TableCell className="text-right">
+                        {mio && casi === 0 ? (
+                          <button type="button" className="text-xs font-semibold text-destructive" onClick={() => disattiva.mutate(t.codice)}>
+                            Rimuovi
+                          </button>
+                        ) : null}
+                      </TableCell>
+                    ) : null}
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        ) : null}
+        {gestione ? (
+          <div className="grid gap-3 rounded-xl border border-border p-4 md:grid-cols-[1fr_1fr_auto]">
+            <div className="space-y-2">
+              <Label htmlFor="nuovo-sentinella">Nuovo evento sentinella</Label>
+              <Input id="nuovo-sentinella" value={etichetta} onChange={(e) => setEtichetta(e.target.value)} placeholder="Es. Aggressione con arma a operatore" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="nuovo-sentinella-desc">Quando si applica (aiuta l’assistente)</Label>
+              <Input id="nuovo-sentinella-desc" value={descrizione} onChange={(e) => setDescrizione(e.target.value)} placeholder="Es. uso di oggetti contundenti o taglienti contro il personale" />
+            </div>
+            <div className="flex items-end">
+              <Button disabled={!etichetta.trim() || crea.isPending} onClick={() => crea.mutate()}>
+                Aggiungi
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </CardContent>
+      </details>
+    </Card>
   );
 }
 
@@ -170,7 +276,7 @@ function FormScheda({ evento }: { evento: EventoSentinella }) {
         <DialogHeader>
           <DialogTitle>Scheda evento sentinella</DialogTitle>
         </DialogHeader>
-        <Campo label="Tipo (protocollo Ministero)">
+        <Campo label="Tipo di evento sentinella">
           <SelectOpzioni
             value={f.tipo_codice}
             onChange={(v) => set("tipo_codice", v)}

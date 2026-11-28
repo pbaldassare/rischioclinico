@@ -237,7 +237,7 @@ export function PwaNuova() {
             tipi: cat.elenco("tipo_evento_ir").map((c) => ({ codice: c.codice, etichetta: c.etichetta })),
             fasi: cat.elenco("fase_cura").map((c) => ({ codice: c.codice, etichetta: c.etichetta })),
             luoghi: cat.elenco("luogo").map((c) => ({ codice: c.codice, etichetta: c.etichetta })),
-            sentinelle: cat.tipiSentinella.map((t) => ({ codice: t.codice, etichetta: t.etichetta })),
+            sentinelle: cat.tipiSentinella.map((t) => ({ codice: t.codice, etichetta: t.descrizione ? `${t.etichetta} (${t.descrizione})` : t.etichetta })),
           },
         },
       });
