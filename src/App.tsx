@@ -9,6 +9,9 @@ import { PwaNuova } from "@/pages/pwa/Nuova";
 import { PwaProfilo } from "@/pages/pwa/Profilo";
 import { Caricamento } from "@/mobile/atoms";
 import { usaPwa } from "@/lib/labels";
+import { isStandalone } from "@/lib/pwa-install";
+import { PulsanteInstalla } from "@/components/PulsanteInstalla";
+import { Marchio } from "@/components/Marchio";
 
 // Il backoffice si scarica solo quando serve: la PWA operatore resta leggera.
 const Backoffice = lazy(() => import("@/pages/bo/Backoffice").then((m) => ({ default: m.Backoffice })));
@@ -33,6 +36,8 @@ function RequireAuth({ pwa }: { pwa?: boolean }) {
   if (caricamento) return <Caricamento />;
   if (!profilo) return <Navigate to="/" replace />;
   const vuolePwa = usaPwa(profilo.ruolo);
+  // L'operatore entra solo dall'app installata, mai dal browser.
+  if (vuolePwa && !isStandalone()) return <SoloAppInstallata />;
   if (pwa && !vuolePwa) return <Navigate to={homeDopoLogin(profilo)} replace />;
   if (!pwa && vuolePwa) return <Navigate to="/app" replace />;
   return (
@@ -45,6 +50,24 @@ function RequireAuth({ pwa }: { pwa?: boolean }) {
 // La PWA fa solo segnalazioni: dopo l'invio si torna qui con un form vuoto.
 function NuovaFresca() {
   return <PwaNuova key={useLocation().key} />;
+}
+
+function SoloAppInstallata() {
+  const { esci } = useAuth();
+  return (
+    <div className="mx-auto flex min-h-[100dvh] w-full max-w-[480px] flex-col justify-center gap-4 px-6 py-8">
+      <Marchio sottotitolo="Operatore" />
+      <h1 className="font-display text-xl font-bold">Entra dall’app installata</h1>
+      <p className="text-sm text-muted-foreground">
+        Il tuo accesso da operatore funziona solo dall’app sulla schermata Home del telefono, non dal browser.
+        Installala e aprila da lì.
+      </p>
+      <PulsanteInstalla />
+      <button type="button" onClick={() => void esci()} className="text-sm font-semibold text-primary underline-offset-4 hover:underline">
+        Esci
+      </button>
+    </div>
+  );
 }
 
 function PortaLogin() {
