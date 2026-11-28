@@ -1,6 +1,12 @@
 import type { ReactNode } from "react";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useCatalog } from "@/lib/catalog";
 import type { FiltriAmbito as Filtri } from "@/lib/types";
 
@@ -16,8 +22,12 @@ export function FiltriAmbito({
   mostraAzienda?: boolean;
 }) {
   const { aziende, presidi, unita } = useCatalog();
-  const presidiFiltrati = presidi.filter((p) => !value.aziendaId || p.azienda_id === value.aziendaId);
-  const unitaFiltrate = unita.filter((u) => !value.presidioId || u.presidio_id === value.presidioId);
+  const presidiFiltrati = presidi.filter(
+    (p) => !value.aziendaId || p.azienda_id === value.aziendaId,
+  );
+  const unitaFiltrate = unita.filter(
+    (u) => !value.presidioId || u.presidio_id === value.presidioId,
+  );
 
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -26,7 +36,12 @@ export function FiltriAmbito({
           <Select
             value={value.aziendaId ?? "tutte"}
             onValueChange={(v) =>
-              onChange({ ...value, aziendaId: v === "tutte" ? null : v, presidioId: null, unitaId: null })
+              onChange({
+                ...value,
+                aziendaId: v === "tutte" ? null : v,
+                presidioId: null,
+                unitaId: null,
+              })
             }
           >
             <SelectTrigger>
@@ -47,7 +62,13 @@ export function FiltriAmbito({
       <Campo label="Ospedale">
         <Select
           value={value.presidioId ?? "tutti"}
-          onValueChange={(v) => onChange({ ...value, presidioId: v === "tutti" ? null : v, unitaId: null })}
+          onValueChange={(v) =>
+            onChange({
+              ...value,
+              presidioId: v === "tutti" ? null : v,
+              unitaId: null,
+            })
+          }
         >
           <SelectTrigger>
             <SelectValue placeholder="Presidio" />
@@ -66,7 +87,9 @@ export function FiltriAmbito({
       <Campo label="Reparto">
         <Select
           value={value.unitaId ?? "tutti"}
-          onValueChange={(v) => onChange({ ...value, unitaId: v === "tutti" ? null : v })}
+          onValueChange={(v) =>
+            onChange({ ...value, unitaId: v === "tutti" ? null : v })
+          }
         >
           <SelectTrigger>
             <SelectValue placeholder="Reparto" />
@@ -76,6 +99,9 @@ export function FiltriAmbito({
             {unitaFiltrate.map((u) => (
               <SelectItem key={u.id} value={u.id}>
                 {u.nome}
+                {value.presidioId
+                  ? ""
+                  : ` · ${presidi.find((p) => p.id === u.presidio_id)?.nome ?? ""}`}
               </SelectItem>
             ))}
           </SelectContent>
@@ -83,7 +109,12 @@ export function FiltriAmbito({
       </Campo>
 
       <Campo label="Anno evento">
-        <Select value={value.anno ?? "tutti"} onValueChange={(v) => onChange({ ...value, anno: v === "tutti" ? null : v })}>
+        <Select
+          value={value.anno ?? "tutti"}
+          onValueChange={(v) =>
+            onChange({ ...value, anno: v === "tutti" ? null : v })
+          }
+        >
           <SelectTrigger>
             <SelectValue placeholder="Anno" />
           </SelectTrigger>

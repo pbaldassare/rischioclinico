@@ -10,14 +10,22 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useCatalog } from "@/lib/catalog";
 import { useAuth } from "@/lib/auth";
 import { ePresidio } from "@/lib/livelli";
-import { creaUtentePiattaforma, fetchOperatori, sostituisciAssegnazioni } from "@/lib/queries";
+import {
+  creaUtentePiattaforma,
+  fetchOperatori,
+  sostituisciAssegnazioni,
+} from "@/lib/queries";
 import type { Privilegio, Profile } from "@/lib/types";
 
 export function BoOperatori() {
   const { profilo } = useAuth();
   const cat = useCatalog();
   const qc = useQueryClient();
-  const q = useQuery({ queryKey: ["operatori"], queryFn: fetchOperatori, enabled: ePresidio(profilo) });
+  const q = useQuery({
+    queryKey: ["operatori"],
+    queryFn: fetchOperatori,
+    enabled: ePresidio(profilo),
+  });
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
 
@@ -44,7 +52,8 @@ export function BoOperatori() {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Gli operatori usano solo l’app e segnalano nei reparti a cui li colleghi.
+        Gli operatori usano solo l’app e segnalano nei reparti a cui li
+        colleghi.
       </p>
       <Card>
         <CardHeader>
@@ -57,7 +66,11 @@ export function BoOperatori() {
           </div>
           <div className="space-y-2">
             <Label>Email</Label>
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
           <div className="flex items-end">
             <Button
@@ -82,7 +95,8 @@ function SchedaOperatore({ operatore }: { operatore: Profile }) {
   const qc = useQueryClient();
   const iniziali = useMemo(() => {
     const map: Record<string, Privilegio[]> = {};
-    for (const a of operatore.assegnazioni ?? []) map[a.unita_operativa_id] = a.privilegi;
+    for (const a of operatore.assegnazioni ?? [])
+      map[a.unita_operativa_id] = a.privilegi;
     return map;
   }, [operatore.assegnazioni]);
   const [scelte, setScelte] = useState<Record<string, Privilegio[]>>(iniziali);
@@ -93,7 +107,10 @@ function SchedaOperatore({ operatore }: { operatore: Profile }) {
         operatore.id,
         Object.entries(scelte)
           .filter(([, priv]) => priv.length)
-          .map(([unita_operativa_id, privilegi]) => ({ unita_operativa_id, privilegi })),
+          .map(([unita_operativa_id, privilegi]) => ({
+            unita_operativa_id,
+            privilegi,
+          })),
       ),
     onSuccess: () => {
       toast.success("Assegnazioni aggiornate");
@@ -111,28 +128,45 @@ function SchedaOperatore({ operatore }: { operatore: Profile }) {
     });
   }
 
-
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-xl">
           {[operatore.nome, operatore.cognome].filter(Boolean).join(" ")}
-          <span className="ml-2 text-sm font-normal text-muted-foreground">{operatore.email}</span>
+          <span className="ml-2 text-sm font-normal text-muted-foreground">
+            {operatore.email}
+          </span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {cat.unita.map((u) => {
-          const attivo = u.id in scelte;
-          return (
-            <div key={u.id} className="rounded-[19px] border border-border p-3">
-              <label className="flex items-center gap-2 font-semibold">
-                <Checkbox checked={attivo} onCheckedChange={(v) => toggleReparto(u.id, v === true)} />
-                {u.nome}
-                <span className="text-xs font-normal text-muted-foreground">{cat.nomePresidio(u.presidio_id)}</span>
-              </label>
-            </div>
-          );
-        })}
+        {[...cat.unita]
+          .sort(
+            (a, b) =>
+              cat
+                .nomePresidio(a.presidio_id)
+                .localeCompare(cat.nomePresidio(b.presidio_id)) ||
+              a.nome.localeCompare(b.nome),
+          )
+          .map((u) => {
+            const attivo = u.id in scelte;
+            return (
+              <div
+                key={u.id}
+                className="rounded-[19px] border border-border p-3"
+              >
+                <label className="flex items-center gap-2 font-semibold">
+                  <Checkbox
+                    checked={attivo}
+                    onCheckedChange={(v) => toggleReparto(u.id, v === true)}
+                  />
+                  {u.nome}
+                  <span className="text-xs font-normal text-muted-foreground">
+                    {cat.nomePresidio(u.presidio_id)}
+                  </span>
+                </label>
+              </div>
+            );
+          })}
         <Button onClick={() => salva.mutate()} disabled={salva.isPending}>
           Salva assegnazioni
         </Button>
