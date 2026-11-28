@@ -105,10 +105,10 @@ export function PwaNuova() {
       toast.success("Segnalazione inviata");
       qc.invalidateQueries({ queryKey: ["segnalazioni"] });
       qc.invalidateQueries({ queryKey: ["allegati", data.id] });
-      navigate(`/app/coda/${data.id}`);
+      navigate("/app");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Scheda salvata, allegati non caricati");
-      navigate(`/app/coda/${data.id}`);
+      navigate("/app");
     } finally {
       setInvio(false);
     }
@@ -116,7 +116,7 @@ export function PwaNuova() {
 
   return (
     <div className="flex flex-1 flex-col px-4 pb-6">
-      <Intestazione titolo="Nuova segnalazione" sottotitolo="Scheda di incident reporting" indietro />
+      <Intestazione titolo="Nuova segnalazione" sottotitolo="Scheda di incident reporting" />
       <form
         className="space-y-3"
         onSubmit={(e) => {

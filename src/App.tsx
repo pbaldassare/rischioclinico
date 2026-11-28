@@ -1,15 +1,11 @@
-import { Navigate, Outlet, Route, Routes } from "react-router-dom";
+import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { CatalogProvider } from "@/lib/catalog";
 import { Login } from "@/pages/Login";
 import { Installa } from "@/pages/Installa";
 import { MobileShell } from "@/mobile/MobileShell";
-import { PwaHome } from "@/pages/pwa/Home";
 import { PwaNuova } from "@/pages/pwa/Nuova";
-import { PwaCoda } from "@/pages/pwa/Coda";
-import { PwaDettaglio } from "@/pages/pwa/Dettaglio";
 import { PwaProfilo } from "@/pages/pwa/Profilo";
-import { PwaFdr } from "@/pages/pwa/Fdr";
 import { Backoffice } from "@/pages/bo/Backoffice";
 import { BoDashboard } from "@/pages/bo/Dashboard";
 import { BoSegnalazioni } from "@/pages/bo/Segnalazioni";
@@ -43,6 +39,11 @@ function RequireAuth({ pwa }: { pwa?: boolean }) {
   );
 }
 
+// La PWA fa solo segnalazioni: dopo l'invio si torna qui con un form vuoto.
+function NuovaFresca() {
+  return <PwaNuova key={useLocation().key} />;
+}
+
 function PortaLogin() {
   const { profilo, caricamento, homeDopoLogin } = useAuth();
   if (caricamento) return <Caricamento />;
@@ -58,19 +59,7 @@ export default function App() {
         <Route path="/installa" element={<Installa />} />
         <Route element={<RequireAuth pwa />}>
           <Route path="/app" element={<MobileShell />}>
-            <Route index element={<PwaHome />} />
-            <Route path="nuova" element={<PwaNuova />} />
-            <Route path="coda" element={<PwaCoda />} />
-            <Route path="coda/:id" element={<PwaDettaglio />} />
-            <Route path="fdr" element={<PwaFdr />} />
-            <Route
-              path="fdr/:id"
-              element={
-                <div className="px-4 pb-6">
-                  <BoFdrDettaglio />
-                </div>
-              }
-            />
+            <Route index element={<NuovaFresca />} />
             <Route path="profilo" element={<PwaProfilo />} />
           </Route>
         </Route>
