@@ -409,11 +409,6 @@ export async function aggiungiAssegnazione(profileId: string, unitaId: string, p
   if (error) throw error;
 }
 
-export async function aggiornaAssegnazione(id: string, privilegi: Privilegio[]) {
-  const { error } = await supabase.from("assegnazioni_reparto").update({ privilegi }).eq("id", id);
-  if (error) throw error;
-}
-
 export async function rimuoviAssegnazione(id: string) {
   const { error } = await supabase.from("assegnazioni_reparto").delete().eq("id", id);
   if (error) throw error;

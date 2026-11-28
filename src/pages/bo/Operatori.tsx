@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useCatalog } from "@/lib/catalog";
 import { useAuth } from "@/lib/auth";
-import { ePresidio, PRIVILEGI_OPERATORE } from "@/lib/livelli";
+import { ePresidio } from "@/lib/livelli";
 import { creaUtentePiattaforma, fetchOperatori, sostituisciAssegnazioni } from "@/lib/queries";
 import type { Privilegio, Profile } from "@/lib/types";
 
@@ -44,7 +44,7 @@ export function BoOperatori() {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Gli operatori usano solo l’app, sul reparto che assegni, con i privilegi che dai tu.
+        Gli operatori usano solo l’app e segnalano nei reparti a cui li colleghi.
       </p>
       <Card>
         <CardHeader>
@@ -105,20 +105,12 @@ function SchedaOperatore({ operatore }: { operatore: Profile }) {
   function toggleReparto(id: string, on: boolean) {
     setScelte((prev) => {
       const next = { ...prev };
-      if (on) next[id] = prev[id]?.length ? prev[id] : ["segnalare", "coda"];
+      if (on) next[id] = ["segnalare"];
       else delete next[id];
       return next;
     });
   }
 
-  function togglePriv(id: string, p: Privilegio, on: boolean) {
-    setScelte((prev) => {
-      const cur = new Set(prev[id] ?? []);
-      if (on) cur.add(p);
-      else cur.delete(p);
-      return { ...prev, [id]: [...cur] as Privilegio[] };
-    });
-  }
 
   return (
     <Card>
@@ -138,19 +130,6 @@ function SchedaOperatore({ operatore }: { operatore: Profile }) {
                 {u.nome}
                 <span className="text-xs font-normal text-muted-foreground">{cat.nomePresidio(u.presidio_id)}</span>
               </label>
-              {attivo ? (
-                <div className="mt-2 flex flex-wrap gap-3 pl-6 text-sm">
-                  {PRIVILEGI_OPERATORE.map((p) => (
-                    <label key={p.codice} className="flex items-center gap-2">
-                      <Checkbox
-                        checked={(scelte[u.id] ?? []).includes(p.codice)}
-                        onCheckedChange={(v) => togglePriv(u.id, p.codice, v === true)}
-                      />
-                      {p.etichetta}
-                    </label>
-                  ))}
-                </div>
-              ) : null}
             </div>
           );
         })}

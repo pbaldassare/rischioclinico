@@ -1,6 +1,7 @@
 export type Ruolo = "admin" | "presidio" | "operatore";
 
-export type Privilegio = "segnalare" | "coda" | "fdr" | "lavorare";
+// Un solo compito: collegato al reparto = può segnalare lì. La colonna resta text[] per compatibilità.
+export type Privilegio = "segnalare";
 
 export interface AssegnazioneReparto {
   id: string;

@@ -136,13 +136,13 @@ values
     'aa000000-0001-4000-8000-000000000001',
     '44444444-4444-4444-4444-444444444441',
     'c0c0c0c0-0001-4000-8000-000000001101',
-    array['segnalare', 'coda', 'fdr']::text[]
+    array['segnalare']::text[]
   ),
   (
     'aa000000-0001-4000-8000-000000000002',
     '44444444-4444-4444-4444-444444444444',
     'c0c0c0c0-0001-4000-8000-000000002101',
-    array['segnalare', 'coda', 'fdr']::text[]
+    array['segnalare']::text[]
   );
 
 -- Casi 2026: caduta, ritardo, near miss. Pochi, inventati.

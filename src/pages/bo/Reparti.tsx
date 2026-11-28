@@ -7,15 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCatalog } from "@/lib/catalog";
 import { useAuth } from "@/lib/auth";
-import { eAdmin, ePresidio, PRIVILEGI_OPERATORE } from "@/lib/livelli";
-import { aggiornaAssegnazione, aggiungiAssegnazione, creaReparto, fetchOperatori, fetchSegnalazioni, rimuoviAssegnazione } from "@/lib/queries";
+import { eAdmin, ePresidio } from "@/lib/livelli";
+import { aggiungiAssegnazione, creaReparto, fetchOperatori, fetchSegnalazioni, rimuoviAssegnazione } from "@/lib/queries";
 import { AttivitaOspedale } from "@/components/AttivitaOspedale";
-import type { Privilegio, Profile, UnitaOperativa } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import type { Profile, UnitaOperativa } from "@/lib/types";
 import { DISCIPLINE } from "@/lib/reparti";
 
 const AREE = [...new Set(DISCIPLINE.map((d) => d.area))];
@@ -61,7 +59,7 @@ export function BoReparti() {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Ogni ASL ha i suoi reparti. Un reparto può avere più operatori e un operatore può stare su più reparti: da qui colleghi e scolleghi, e dai i compiti.
+        Ogni ASL ha i suoi reparti. Un reparto può avere più operatori e un operatore può stare su più reparti: chi è collegato può segnalare lì dall’app.
       </p>
 
       {admin ? (
@@ -182,11 +180,6 @@ function Reparto({ unita, operatori, segnalazioni }: { unita: UnitaOperativa; op
     onSuccess: ricarica,
     onError: (e: Error) => toast.error(e.message),
   });
-  const compiti = useMutation({
-    mutationFn: ({ id, privilegi }: { id: string; privilegi: Privilegio[] }) => aggiornaAssegnazione(id, privilegi),
-    onSuccess: ricarica,
-    onError: (e: Error) => toast.error(e.message),
-  });
 
   return (
     <div className="rounded-xl border border-border">
@@ -206,20 +199,6 @@ function Reparto({ unita, operatori, segnalazioni }: { unita: UnitaOperativa; op
                 {[o.nome, o.cognome].filter(Boolean).join(" ")}
                 <span className="block text-xs font-normal text-muted-foreground">{o.email}</span>
               </span>
-              {PRIVILEGI_OPERATORE.map((p) => (
-                <label key={p.codice} className={cn("flex items-center gap-1.5 text-xs", compiti.isPending && "opacity-60")}>
-                  <Checkbox
-                    checked={a.privilegi.includes(p.codice)}
-                    onCheckedChange={(v) => {
-                      const set = new Set(a.privilegi);
-                      if (v === true) set.add(p.codice);
-                      else set.delete(p.codice);
-                      compiti.mutate({ id: a.id, privilegi: [...set] as Privilegio[] });
-                    }}
-                  />
-                  {p.etichetta}
-                </label>
-              ))}
               <button
                 type="button"
                 onClick={() => togli.mutate(a.id)}
