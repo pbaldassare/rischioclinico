@@ -30,8 +30,8 @@ const DANNO_IN_CODICI: Record<Danno, { gravita: string; magnitudo: string }> = {
   lieve: { gravita: "evento_avverso", magnitudo: "lieve" },
   grave: { gravita: "evento_avverso", magnitudo: "severo" },
 };
-// shortcut: i video partono interi, max 25 MB; oltre serve una compressione lato server
-const MAX_VIDEO = 25 * 1024 * 1024;
+// shortcut: i video partono interi; 10 MB è il limite del bucket rc-allegati (circa 30-60 s da telefono), per andare oltre serve comprimere lato server
+const MAX_VIDEO = 10 * 1024 * 1024;
 
 export function PwaNuova() {
   const cat = useCatalog();
@@ -106,7 +106,7 @@ export function PwaNuova() {
   function aggiungiMedia(files: FileList | null) {
     const nuovi = [...(files ?? [])].filter((f) => {
       if (f.type.startsWith("video/") && f.size > MAX_VIDEO) {
-        toast.error(`${f.name}: video oltre 25 MB, registrane uno più corto`);
+        toast.error(`Video troppo grande (${Math.round(f.size / 1024 / 1024)} MB): massimo 10 MB, circa 30-60 secondi. Registrane uno più corto`);
         return false;
       }
       return true;
@@ -247,7 +247,7 @@ export function PwaNuova() {
             <Azione
               icona={<Camera className="h-7 w-7" aria-hidden />}
               titolo="Foto o video"
-              nota="Dalla fotocamera, video brevi"
+              nota="Dalla fotocamera, video fino a 10 MB"
               come="span"
             />
           </label>
