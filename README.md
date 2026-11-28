@@ -41,7 +41,7 @@ Login reale su Supabase Auth (email + password). Gli utenti coincidono con `risc
 | admin@demo.asl | Admin | `/bo` — crea ASL e ospedali, tutte le statistiche, richieste e sinistri |
 | nord@demo.asl | ASL / presidio (ASL Nord) | `/bo` — solo ASL Nord: reparti, operatori, sue stats |
 | costa@demo.asl | ASL / presidio (ASL Costa) | `/bo` — solo ASL Costa |
-| operatore.nord@demo.asl | Operatore | `/app` — PWA sul Pronto soccorso Collina (solo dall’app installata) |
+| operatore.nord@demo.asl | Operatore | `/app` — PWA sul Pronto soccorso Collina |
 | operatore.costa@demo.asl | Operatore | `/app` — PWA sul Pronto soccorso Litorale |
 
 I vecchi ruoli (referente, direzione, regione, broker, amministrativo sinistri) non sono più livelli di accesso.
