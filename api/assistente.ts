@@ -98,8 +98,7 @@ function bozzaLocale(tipo: AssistenteTipo, testo: string, contesto: Record<strin
     avviso,
     // Scrittura guidata (Cosa è successo: …): il testo è già una scheda, non va riformulato.
     testo: /Cosa è successo:/.test(testo)
-      ? testo.replace(/(Cosa è successo|Quando|Dove|A chi|Come è andata a finire): /g, "").replace(/
-/g, " ")
+      ? testo.replace(/\b(Cosa è successo|Quando|Dove|A chi|Come è andata a finire): /g, "").replace(/\n/g, " ")
       : `Durante il turno, ${nucleo.replace(/^durante\s+/i, "")}. Dinamica da confermare in scheda (orario, testimoni, esito).`,
     scheda: { tipo_evento, danno, fase_cura: "assistenza", sentinella: false, tipo_sentinella: null },
   };
