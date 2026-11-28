@@ -80,15 +80,15 @@ export function DashboardShell({
   );
 
   return (
-    <div className="flex h-[100dvh] overflow-hidden bg-background">
-      <aside className="hidden w-64 flex-col border-r border-border/70 bg-card md:flex">
+    <div className="flex h-[100dvh] overflow-hidden bg-background print:h-auto print:overflow-visible">
+      <aside className="hidden w-64 flex-col border-r border-border/70 bg-card md:flex print:!hidden">
         <div className="border-b border-border/70 p-6">{marchio}</div>
         {navigazione}
         {piede}
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex items-center gap-3 border-b border-border/70 bg-card px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] md:hidden">
+        <div className="flex items-center gap-3 border-b border-border/70 bg-card px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] md:hidden print:!hidden">
           <Sheet open={pannelloAperto} onOpenChange={setPannelloAperto}>
             <SheetTrigger asChild>
               <Button variant="outline" size="icon" className="shrink-0" aria-label={titolo}>
@@ -108,10 +108,10 @@ export function DashboardShell({
           <h2 className="min-w-0 flex-1 truncate text-base font-bold">{titolo}</h2>
         </div>
 
-        <main ref={contenuto} className="flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)]">
+        <main ref={contenuto} className="flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)] print:overflow-visible">
           <div className="p-4 sm:p-6 lg:p-8">
             {avviso}
-            <div className="mb-6 hidden md:block lg:mb-8">
+            <div className="mb-6 hidden md:block lg:mb-8 print:!hidden">
               <h2 className="mb-2 text-2xl font-bold lg:text-3xl">{titolo}</h2>
               {descrizione ? <p className="text-muted-foreground">{descrizione}</p> : null}
             </div>

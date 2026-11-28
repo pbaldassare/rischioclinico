@@ -179,6 +179,24 @@
   }
 }
 
+@media print {
+  @page {
+    margin: 14mm;
+  }
+  body {
+    background: #fff;
+  }
+  [data-sonner-toaster],
+  .shadow-card,
+  .shadow-glow {
+    box-shadow: none !important;
+  }
+  .rounded-3xl,
+  .glass-card {
+    break-inside: avoid;
+  }
+}
+
 @layer utilities {
   .transition-smooth {
     transition: var(--transition-smooth);
