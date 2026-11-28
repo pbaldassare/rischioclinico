@@ -562,6 +562,12 @@ export async function fetchVociFotografie(ids: string[]) {
   return (data ?? []) as VoceFotografia[];
 }
 
+export async function fetchAttivitaTutte() {
+  const { data, error } = await supabase.from("attivita_presidio").select("*");
+  if (error) throw error;
+  return (data ?? []) as AttivitaPresidio[];
+}
+
 export async function fetchAttivita(presidioId: string) {
   const { data, error } = await supabase
     .from("attivita_presidio")

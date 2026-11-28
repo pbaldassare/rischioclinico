@@ -2,23 +2,21 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { FiltriAmbito } from "@/components/FiltriAmbito";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { KpiCard } from "@/components/KpiCard";
-import { creaReport, eliminaReport, fetchReport, fetchReportSingolo, fetchSegnalazioni, fetchSinistri } from "@/lib/queries";
-import { useAuth } from "@/lib/auth";
-import { filtriPerProfilo } from "@/lib/ambito";
-import { useCatalog } from "@/lib/catalog";
-import { formatData, formatEuro, sommaMovimenti } from "@/lib/format";
-import type { FiltriAmbito as Filtri, ReportDati, ReportSalvato } from "@/lib/types";
-import { BarChart3, Landmark, Plus, Printer, Trash2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { creaReport, eliminaReport, fetchAttivitaTutte, fetchReport, fetchReportSingolo, fetchSegnalazioni, fetchSinistri } from "@/lib/queries";
+import { useAuth } from "@/lib/auth";
+import { useCatalog } from "@/lib/catalog";
+import { formatData } from "@/lib/format";
+import { calcolaRelazione } from "@/lib/relazione";
+import { DocumentoRelazione } from "@/pages/bo/Relazione";
+import { Plus, Printer, Trash2 } from "lucide-react";
 
-/** Elenco dei report salvati. */
+/** Elenco delle relazioni salvate. */
 export function BoReport() {
   const { profilo } = useAuth();
   const qc = useQueryClient();
@@ -37,12 +35,14 @@ export function BoReport() {
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-3">
-        <p className="text-sm text-muted-foreground">Un report fotografa i numeri di un ambito in una data. Salvato, resta qui e si esporta in PDF.</p>
+        <p className="text-sm text-muted-foreground">
+          La relazione annuale di un’ASL: eventi avversi e risarcimenti, come prevista dalla Legge 24/2017. Salvata, resta qui e si esporta in PDF.
+        </p>
         {puoCreare ? (
           <Button asChild size="sm" className="shrink-0">
             <Link to="/bo/report/nuovo">
               <Plus className="h-4 w-4" />
-              Nuovo report
+              Nuova relazione
             </Link>
           </Button>
         ) : null}
@@ -50,17 +50,17 @@ export function BoReport() {
       <Card>
         <CardContent className="p-0">
           {lista.length === 0 ? (
-            <p className="p-6 text-sm text-muted-foreground">Nessun report salvato. Crea il primo con "Nuovo report".</p>
+            <p className="p-6 text-sm text-muted-foreground">Nessuna relazione salvata. Crea la prima con "Nuova relazione".</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Titolo</TableHead>
-                  <TableHead>Ambito</TableHead>
-                  <TableHead>Creato</TableHead>
+                  <TableHead>ASL</TableHead>
+                  <TableHead>Anno</TableHead>
+                  <TableHead>Creata</TableHead>
                   <TableHead>Segnalazioni</TableHead>
-                  <TableHead>Sinistri</TableHead>
-                  <TableHead>RIS+LIQ</TableHead>
+                  <TableHead>Richieste</TableHead>
                   <TableHead />
                 </TableRow>
               </TableHeader>
@@ -72,18 +72,18 @@ export function BoReport() {
                         {r.titolo}
                       </Link>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{r.dati.ambito}</TableCell>
+                    <TableCell className="text-muted-foreground">{r.dati.azienda}</TableCell>
+                    <TableCell>{r.dati.anno}</TableCell>
                     <TableCell>{formatData(r.created_at, true)}</TableCell>
-                    <TableCell>{r.dati.segnalazioni}</TableCell>
-                    <TableCell>{r.dati.sinistri}</TableCell>
-                    <TableCell>{formatEuro(r.dati.risLiq)}</TableCell>
+                    <TableCell>{r.dati.sintesi.segnalazioni}</TableCell>
+                    <TableCell>{r.dati.sintesi.richieste}</TableCell>
                     <TableCell className="text-right">
                       <button
                         type="button"
                         aria-label={`Elimina ${r.titolo}`}
                         className="text-muted-foreground hover:text-destructive"
                         onClick={() => {
-                          if (window.confirm(`Eliminare il report "${r.titolo}"?`)) elimina.mutate(r.id);
+                          if (window.confirm(`Eliminare "${r.titolo}"?`)) elimina.mutate(r.id);
                         }}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -100,118 +100,127 @@ export function BoReport() {
   );
 }
 
-/** Nuovo report: scegli l'ambito, guarda i numeri, dai un titolo e salva. */
+/** Nuova relazione: ASL e anno, anteprima del documento, titolo e salva. */
 export function BoReportNuovo() {
   const { profilo } = useAuth();
   const cat = useCatalog();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const [filtri, setFiltri] = useState<Filtri>(() => filtriPerProfilo(profilo));
+  const admin = profilo?.ruolo === "admin";
+  const [aziendaId, setAziendaId] = useState(profilo?.azienda_id ?? "");
+  const aziendaScelta = admin ? aziendaId || cat.aziende[0]?.id || "" : (profilo?.azienda_id ?? "");
+  const [anno, setAnno] = useState(new Date().getFullYear());
   const [titolo, setTitolo] = useState("");
-  const seg = useQuery({ queryKey: ["segnalazioni", filtri], queryFn: () => fetchSegnalazioni(filtri) });
-  const sin = useQuery({ queryKey: ["sinistri", filtri], queryFn: () => fetchSinistri(filtri) });
-
-  const dati = useMemo<ReportDati>(() => {
-    const livello = filtri.unitaId ? "Reparto" : filtri.presidioId ? "Ospedale" : filtri.aziendaId ? "ASL" : "Tutte le ASL";
-    const ambito = [
-      filtri.aziendaId ? cat.nomeAzienda(filtri.aziendaId) : "Tutte le ASL",
-      filtri.presidioId ? cat.nomePresidio(filtri.presidioId) : "Tutti gli ospedali",
-      filtri.unitaId ? cat.nomeUnita(filtri.unitaId) : "Tutti i reparti",
-      filtri.anno ? `Anno ${filtri.anno}` : "Tutti gli anni",
-    ].join(" · ");
-    const sinistri = sin.data ?? [];
-    const map = new Map<string, { nome: string; n: number; importo: number }>();
-    for (const s of sinistri) {
-      const id = s.presidio_id ?? "nd";
-      const cur = map.get(id) ?? { nome: s.presidio?.nome ?? cat.nomePresidio(s.presidio_id), n: 0, importo: 0 };
-      cur.n += 1;
-      cur.importo += sommaMovimenti(s.movimenti, ["riservato", "liquidato"]);
-      map.set(id, cur);
-    }
-    const k = (v: unknown) => `${Math.round(Number(v) / 1000)}k`;
-    const perFascia = cat.fasce.map((f) => ({
-      fascia: f.etichetta,
-      // Etichetta corta per l'asse: quella completa resta nel tooltip.
-      breve: f.a_euro == null ? `> ${k(f.da_euro)}` : Number(f.da_euro) === 0 ? `fino a ${k(f.a_euro)}` : `${k(f.da_euro)}–${k(f.a_euro)}`,
-      n: sinistri.filter((s) => {
-        const v = sommaMovimenti(s.movimenti, ["riservato", "liquidato"]);
-        return v >= Number(f.da_euro) && (f.a_euro == null || v <= Number(f.a_euro));
-      }).length,
-    }));
-    return {
-      livello,
-      ambito,
-      segnalazioni: seg.data?.length ?? 0,
-      sinistri: sinistri.length,
-      risLiq: sinistri.reduce((a, s) => a + sommaMovimenti(s.movimenti, ["riservato", "liquidato"]), 0),
-      perPresidio: [...map.values()],
-      perFascia,
-    };
-  }, [filtri, seg.data, sin.data, cat]);
-
-  const titoloProposto = `Report ${dati.livello} · ${new Date().toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}`;
+  const seg = useQuery({ queryKey: ["segnalazioni", { aziendaId: aziendaScelta }], queryFn: () => fetchSegnalazioni({ aziendaId: aziendaScelta }) });
+  const sin = useQuery({ queryKey: ["sinistri", { aziendaId: aziendaScelta }], queryFn: () => fetchSinistri({ aziendaId: aziendaScelta }) });
+  const att = useQuery({ queryKey: ["attivita"], queryFn: fetchAttivitaTutte });
+  const presidi = cat.presidi.filter((p) => p.azienda_id === aziendaScelta);
+  const anni = useMemo(() => {
+    const set = new Set<number>([new Date().getFullYear()]);
+    for (const s of seg.data ?? []) if (s.data_ora_evento) set.add(new Date(s.data_ora_evento).getFullYear());
+    return [...set].sort((a, b) => b - a);
+  }, [seg.data]);
+  const relazione = useMemo(
+    () =>
+      seg.data && sin.data
+        ? calcolaRelazione({
+            azienda: cat.nomeAzienda(aziendaScelta),
+            anno,
+            segnalazioni: seg.data,
+            sinistri: sin.data,
+            attivita: att.data ?? [],
+            presidi,
+            unita: cat.unita.filter((u) => presidi.some((p) => p.id === u.presidio_id)),
+          })
+        : null,
+    [seg.data, sin.data, att.data, anno, aziendaScelta, cat, presidi],
+  );
+  const titoloProposto = `Relazione annuale ${anno} · ${cat.nomeAzienda(aziendaScelta)}`;
   const salva = useMutation({
     mutationFn: () =>
       creaReport({
-        azienda_id: filtri.aziendaId ?? profilo?.azienda_id ?? null,
+        azienda_id: aziendaScelta || null,
         titolo: titolo.trim() || titoloProposto,
-        ambito: filtri,
-        dati,
+        ambito: { aziendaId: aziendaScelta, anno: String(anno) },
+        dati: relazione!,
         creato_da: profilo?.id ?? null,
       }),
     onSuccess: (r) => {
-      toast.success("Report salvato");
+      toast.success("Relazione salvata");
       void qc.invalidateQueries({ queryKey: ["report"] });
       navigate(`/bo/report/${r.id}`);
     },
     onError: (e: Error) => toast.error(e.message),
   });
-  const pronto = !seg.isLoading && !sin.isLoading;
 
   return (
     <div className="space-y-4">
-      <FiltriAmbito value={filtri} onChange={setFiltri} mostraAzienda={profilo?.ruolo === "admin"} />
       <Card>
-        <CardContent className="flex flex-wrap items-end gap-3 pt-6">
-          <div className="min-w-[260px] flex-1 space-y-2">
-            <Label htmlFor="titolo">Titolo del report</Label>
+        <CardContent className="grid gap-3 pt-6 md:grid-cols-4">
+          {admin ? (
+            <div className="space-y-2">
+              <Label>ASL</Label>
+              <Select value={aziendaScelta} onValueChange={setAziendaId}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {cat.aziende.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
+          <div className="space-y-2">
+            <Label>Anno</Label>
+            <Select value={String(anno)} onValueChange={(v) => setAnno(Number(v))}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {anni.map((a) => (
+                  <SelectItem key={a} value={String(a)}>
+                    {a}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="titolo">Titolo</Label>
             <Input id="titolo" value={titolo} onChange={(e) => setTitolo(e.target.value)} placeholder={titoloProposto} />
           </div>
-          <Button onClick={() => salva.mutate()} disabled={!pronto || salva.isPending}>
-            {salva.isPending ? "Salvo…" : "Salva report"}
-          </Button>
-          <Button variant="outline" asChild>
-            <Link to="/bo/report">Annulla</Link>
-          </Button>
+          <div className="flex gap-2 md:col-span-4">
+            <Button onClick={() => salva.mutate()} disabled={!relazione || salva.isPending}>
+              {salva.isPending ? "Salvo…" : "Salva relazione"}
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/bo/report">Annulla</Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
-      <VistaReport dati={dati} />
+      {relazione ? <DocumentoRelazione r={relazione} /> : <p className="text-sm text-muted-foreground">Calcolo…</p>}
     </div>
   );
 }
 
-/** Report salvato: i numeri di allora, con esportazione PDF. */
+/** Relazione salvata: i numeri di allora, con esportazione PDF. */
 export function BoReportSalvato() {
   const { id } = useParams();
   const q = useQuery({ queryKey: ["report", id], queryFn: () => fetchReportSingolo(id!), enabled: !!id });
   if (q.isLoading) return <p className="text-sm text-muted-foreground">Carico…</p>;
   const r = q.data;
-  if (!r) return <p className="text-sm text-muted-foreground">Report non trovato.</p>;
-  const quando = formatData(r.created_at, true);
+  if (!r) return <p className="text-sm text-muted-foreground">Relazione non trovata.</p>;
   return (
     <div className="space-y-4">
-      <div className="hidden print:block">
-        <h1 className="text-2xl font-bold">{r.titolo}</h1>
-        <p className="text-sm text-muted-foreground">
-          {r.dati.ambito} · creato il {quando}
-        </p>
-      </div>
       <div className="flex items-start justify-between gap-3 print:hidden">
         <div>
           <p className="text-sm font-semibold">{r.titolo}</p>
-          <p className="text-sm text-muted-foreground">
-            {r.dati.ambito} · creato il {quando}
-          </p>
+          <p className="text-sm text-muted-foreground">Salvata il {formatData(r.created_at, true)}</p>
         </div>
         <div className="flex shrink-0 gap-2">
           <Button type="button" variant="outline" size="sm" onClick={() => window.print()}>
@@ -219,65 +228,11 @@ export function BoReportSalvato() {
             Esporta PDF
           </Button>
           <Button variant="outline" size="sm" asChild>
-            <Link to="/bo/report">Tutti i report</Link>
+            <Link to="/bo/report">Tutte le relazioni</Link>
           </Button>
         </div>
       </div>
-      <VistaReport dati={r.dati} />
+      <DocumentoRelazione r={r.dati} />
     </div>
   );
 }
-
-function VistaReport({ dati }: { dati: ReportDati }) {
-  return (
-    <>
-      <div className="griglia-kpi grid gap-4 md:grid-cols-3 print:grid-cols-3">
-        <KpiCard icon={BarChart3} titolo="Segnalazioni" valore={dati.segnalazioni} />
-        <KpiCard icon={Landmark} titolo="Sinistri" valore={dati.sinistri} />
-        <KpiCard icon={Landmark} titolo="RIS+LIQ" valore={formatEuro(dati.risLiq)} tinta="text-accent" />
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl">Sinistri per presidio</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Presidio</TableHead>
-                <TableHead>N.</TableHead>
-                <TableHead>Importo RIS+LIQ</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {dati.perPresidio.map((r) => (
-                <TableRow key={r.nome}>
-                  <TableCell>{r.nome}</TableCell>
-                  <TableCell>{r.n}</TableCell>
-                  <TableCell>{formatEuro(r.importo)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl">Sinistri per fascia di importo</CardTitle>
-        </CardHeader>
-        <CardContent className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={dati.perFascia}>
-              <XAxis dataKey="breve" tick={{ fontSize: 11 }} interval={0} />
-              <YAxis allowDecimals={false} />
-              <Tooltip labelFormatter={(_, p) => String(p[0]?.payload?.fascia ?? "")} />
-              <Bar dataKey="n" name="Sinistri" fill="hsl(206 85% 43%)" radius={8} />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-    </>
-  );
-}
-
-export type { ReportSalvato };

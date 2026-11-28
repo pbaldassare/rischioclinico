@@ -221,22 +221,14 @@ export interface FiltriAmbito {
   anno?: string | null;
 }
 
-export interface ReportDati {
-  livello: string;
-  ambito: string;
-  segnalazioni: number;
-  sinistri: number;
-  risLiq: number;
-  perPresidio: { nome: string; n: number; importo: number }[];
-  perFascia: { fascia: string; breve: string; n: number }[];
-}
+import type { Relazione } from "./relazione";
 
 export interface ReportSalvato {
   id: string;
   azienda_id: string | null;
   titolo: string;
-  ambito: FiltriAmbito;
-  dati: ReportDati;
+  ambito: Record<string, string | null | undefined>;
+  dati: Relazione;
   creato_da: string | null;
   created_at: string;
 }
