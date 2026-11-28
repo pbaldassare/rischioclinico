@@ -155,7 +155,7 @@ export function BoReportNuovo() {
 
   return (
     <div className="space-y-4">
-      <Card>
+      <Card className="print:hidden">
         <CardContent className="grid gap-3 pt-6 md:grid-cols-4">
           {admin ? (
             <div className="space-y-2">
