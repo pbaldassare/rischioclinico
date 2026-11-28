@@ -29,7 +29,7 @@ export function PwaHome() {
   return (
     <div className="flex flex-1 flex-col px-4 pb-4 pt-5">
       <p className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">{saluto()}</p>
-      <h1 className="font-display text-2xl font-bold">{profilo?.nome}</h1>
+      <h1 className="font-display text-2xl font-bold">{[profilo?.nome, profilo?.cognome].filter(Boolean).join(" ")}</h1>
       <p className="mt-1 text-xs text-muted-foreground">
         {reparti.length ? reparti.join(", ") : "Nessun reparto assegnato"}
         {profilo?.presidio_id ? ` · ${cat.nomePresidio(profilo.presidio_id)}` : ""}

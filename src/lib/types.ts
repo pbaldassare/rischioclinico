@@ -16,6 +16,9 @@ export interface Profile {
   presidio_id: string | null;
   email: string | null;
   nome: string | null;
+  cognome: string | null;
+  telefono: string | null;
+  foto_url: string | null;
   ruolo: Ruolo;
   attivo: boolean;
   assegnazioni?: AssegnazioneReparto[] | null;

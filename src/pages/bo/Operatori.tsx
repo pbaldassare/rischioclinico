@@ -124,7 +124,7 @@ function SchedaOperatore({ operatore }: { operatore: Profile }) {
     <Card>
       <CardHeader>
         <CardTitle className="text-xl">
-          {operatore.nome}
+          {[operatore.nome, operatore.cognome].filter(Boolean).join(" ")}
           <span className="ml-2 text-sm font-normal text-muted-foreground">{operatore.email}</span>
         </CardTitle>
       </CardHeader>

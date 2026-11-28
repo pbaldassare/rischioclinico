@@ -73,7 +73,8 @@ where id = '44444444-4444-4444-4444-444444444447';
 
 update rischio_clinico.profiles
 set email = 'nord@demo.asl',
-    nome = 'Marco Bianchi',
+    nome = 'Marco',
+    cognome = 'Bianchi',
     ruolo = 'presidio',
     attivo = true,
     azienda_id = 'a0a0a0a0-0001-4000-8000-000000000001',
@@ -91,7 +92,8 @@ where id = '44444444-4444-4444-4444-444444444443';
 
 update rischio_clinico.profiles
 set email = 'operatore.nord@demo.asl',
-    nome = 'Anna Rossi',
+    nome = 'Anna',
+    cognome = 'Rossi',
     ruolo = 'operatore',
     attivo = true,
     azienda_id = 'a0a0a0a0-0001-4000-8000-000000000001',
@@ -100,7 +102,8 @@ where id = '44444444-4444-4444-4444-444444444441';
 
 update rischio_clinico.profiles
 set email = 'operatore.costa@demo.asl',
-    nome = 'Paolo Greco',
+    nome = 'Paolo',
+    cognome = 'Greco',
     ruolo = 'operatore',
     attivo = true,
     azienda_id = 'a0a0a0a0-0001-4000-8000-000000000002',
@@ -109,7 +112,8 @@ where id = '44444444-4444-4444-4444-444444444444';
 
 update rischio_clinico.profiles
 set email = 'broker@demo.asl',
-    nome = 'Alberto Di Piazza',
+    nome = 'Alberto',
+    cognome = 'Di Piazza',
     ruolo = 'operatore',
     attivo = false,
     azienda_id = null,
@@ -118,7 +122,8 @@ where id = '44444444-4444-4444-4444-444444444446';
 
 update rischio_clinico.profiles
 set email = 'regione@demo.asl',
-    nome = 'Sara Neri',
+    nome = 'Sara',
+    cognome = 'Neri',
     ruolo = 'operatore',
     attivo = false,
     azienda_id = null,

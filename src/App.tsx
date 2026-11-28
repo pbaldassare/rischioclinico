@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "@/lib/auth";
 import { CatalogProvider } from "@/lib/catalog";
 import { Login } from "@/pages/Login";
 import { Installa } from "@/pages/Installa";
+import { Reimposta } from "@/pages/Reimposta";
 import { MobileShell } from "@/mobile/MobileShell";
 import { PwaHome } from "@/pages/pwa/Home";
 import { PwaNuova } from "@/pages/pwa/Nuova";
@@ -63,6 +64,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<PortaLogin />} />
         <Route path="/installa" element={<Installa />} />
+        <Route path="/reimposta" element={<Reimposta />} />
         <Route element={<RequireAuth pwa />}>
           <Route path="/app" element={<MobileShell />}>
             <Route index element={<PwaHome />} />

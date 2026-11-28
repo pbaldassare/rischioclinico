@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import { PulsanteInstalla } from "@/components/PulsanteInstalla";
 import { Link } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
+import { Toaster } from "@/components/ui/sonner";
 
 const DEMO = [
   { email: "admin@demo.asl", livello: "Admin — tutte le ASL, statistiche, sinistri" },
@@ -23,9 +26,20 @@ export function Login() {
   const [password, setPassword] = useState("");
   const [mostraPassword, setMostraPassword] = useState(false);
   const [errore, setErrore] = useState("");
+  const [recupero, setRecupero] = useState(false);
   const [invio, setInvio] = useState(false);
 
   if (caricamento) return <Caricamento etichetta="Verifico la sessione…" />;
+
+  async function passwordDimenticata() {
+    if (!email.trim()) return void setErrore("Scrivi la tua email, poi premi di nuovo");
+    setRecupero(true);
+    setErrore("");
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: `${window.location.origin}/reimposta` });
+    setRecupero(false);
+    if (error) return void setErrore(error.message);
+    toast.success("Se l’email è registrata, riceverai un link per la nuova password");
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -102,6 +116,9 @@ export function Login() {
           <Button type="submit" className="w-full" disabled={invio}>
             {invio ? "Accesso…" : "Entra"}
           </Button>
+          <button type="button" onClick={() => void passwordDimenticata()} disabled={recupero} className="w-full text-center text-xs font-semibold text-primary">
+            {recupero ? "Invio…" : "Password dimenticata?"}
+          </button>
           <p className="text-[10.5px] text-muted-foreground">Utenti demo (stessa password):</p>
           <ul className="space-y-1 text-[10.5px] text-muted-foreground">
             {DEMO.map((d) => (
@@ -116,6 +133,7 @@ export function Login() {
           <p className="text-[10.5px] text-muted-foreground">Password unica demo: DemoRischio2026!</p>
         </form>
       </div>
+      <Toaster />
     </div>
   );
 }
