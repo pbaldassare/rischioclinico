@@ -220,7 +220,7 @@ export function BoReport() {
               <Bar
                 dataKey="n"
                 name="Sinistri"
-                fill="hsl(190 75% 33%)"
+                fill="hsl(206 85% 43%)"
                 radius={8}
               />
             </BarChart>

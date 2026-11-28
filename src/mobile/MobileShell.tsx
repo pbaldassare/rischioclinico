@@ -11,7 +11,7 @@ export function MobileShell() {
   ];
 
   return (
-    <div className="tema-app relative mx-auto flex h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden overscroll-none border-border bg-background text-foreground sm:border-x">
+    <div className="relative mx-auto flex h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden overscroll-none border-border bg-background text-foreground sm:border-x">
       <main className="flex flex-1 flex-col overflow-y-auto pt-[env(safe-area-inset-top)] pb-[calc(88px+env(safe-area-inset-bottom))]">
         <Outlet />
       </main>

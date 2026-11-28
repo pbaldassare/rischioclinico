@@ -10,8 +10,8 @@
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
-  "background_color": "#F6F2EA",
-  "theme_color": "#F6F2EA",
+  "background_color": "#F0F3F5",
+  "theme_color": "#F0F3F5",
   "prefer_related_applications": false,
   "categories": ["medical", "business", "productivity"],
   "icons": [

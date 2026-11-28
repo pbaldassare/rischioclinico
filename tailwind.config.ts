@@ -17,15 +17,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['"Quicksand Variable"', "Quicksand", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "sans-serif"],
-        display: [
-          '"Baloo 2 Variable"',
-          '"Baloo 2"',
-          '"Quicksand Variable"',
-          "ui-sans-serif",
-          "system-ui",
-          "sans-serif",
-        ],
+        sans: ["Roboto", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "sans-serif"],
+        display: ["Montserrat", "Roboto", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",

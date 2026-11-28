@@ -50,8 +50,8 @@ export function BoDashboard() {
                 <XAxis dataKey="stato" tick={{ fontSize: 12 }} />
                 <YAxis allowDecimals={false} />
                 <Tooltip />
-                <Bar dataKey="nominative" name="Nominative" fill="hsl(190 75% 33%)" radius={8} />
-                <Bar dataKey="anonime" name="Anonime" fill="hsl(191 92% 26%)" radius={8} />
+                <Bar dataKey="nominative" name="Nominative" fill="hsl(206 85% 43%)" radius={8} />
+                <Bar dataKey="anonime" name="Anonime" fill="hsl(206 85% 30%)" radius={8} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
