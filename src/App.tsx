@@ -23,6 +23,8 @@ const BoSinistroDettaglio = lazy(() => import("@/pages/bo/SinistroDettaglio").th
 const BoFdr = lazy(() => import("@/pages/bo/Fdr").then((m) => ({ default: m.BoFdr })));
 const BoFdrDettaglio = lazy(() => import("@/pages/bo/FdrDettaglio").then((m) => ({ default: m.BoFdrDettaglio })));
 const BoReport = lazy(() => import("@/pages/bo/Report").then((m) => ({ default: m.BoReport })));
+const BoReportNuovo = lazy(() => import("@/pages/bo/Report").then((m) => ({ default: m.BoReportNuovo })));
+const BoReportSalvato = lazy(() => import("@/pages/bo/Report").then((m) => ({ default: m.BoReportSalvato })));
 const BoSentinella = lazy(() => import("@/pages/bo/Sentinella").then((m) => ({ default: m.BoSentinella })));
 const BoLegale = lazy(() => import("@/pages/bo/Legale").then((m) => ({ default: m.BoLegale })));
 const BoLegaleDettaglio = lazy(() => import("@/pages/bo/LegaleDettaglio").then((m) => ({ default: m.BoLegaleDettaglio })));
@@ -83,6 +85,8 @@ export default function App() {
             <Route path="fdr" element={<BoFdr />} />
             <Route path="fdr/:id" element={<BoFdrDettaglio />} />
             <Route path="report" element={<BoReport />} />
+            <Route path="report/nuovo" element={<BoReportNuovo />} />
+            <Route path="report/:id" element={<BoReportSalvato />} />
             <Route path="registro" element={<BoRegistro />} />
             <Route path="sentinella" element={<BoSentinella />} />
             <Route path="legale" element={<BoLegale />} />

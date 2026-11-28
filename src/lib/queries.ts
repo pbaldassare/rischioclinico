@@ -18,8 +18,7 @@ import type {
   TipoSentinella,
   UnitaOperativa,
   VoceFotografia,
-  VoceModello,
-} from "./types";
+  VoceModello, ReportSalvato } from "./types";
 
 const PROFILE_SELECT = `
   *,
@@ -245,6 +244,29 @@ export function rcaDi(s: Segnalazione) {
   const rca = s.rca;
   if (!rca) return null;
   return Array.isArray(rca) ? rca[0] ?? null : rca;
+}
+
+export async function fetchReport() {
+  const { data, error } = await supabase.from("report").select("*").order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as ReportSalvato[];
+}
+
+export async function fetchReportSingolo(id: string) {
+  const { data, error } = await supabase.from("report").select("*").eq("id", id).maybeSingle();
+  if (error) throw error;
+  return data as ReportSalvato | null;
+}
+
+export async function creaReport(input: Omit<ReportSalvato, "id" | "created_at">) {
+  const { data, error } = await supabase.from("report").insert(input).select("*").single();
+  if (error) throw error;
+  return data as ReportSalvato;
+}
+
+export async function eliminaReport(id: string) {
+  const { error } = await supabase.from("report").delete().eq("id", id);
+  if (error) throw error;
 }
 
 export async function fetchAllegati(segnalazioneId: string) {
