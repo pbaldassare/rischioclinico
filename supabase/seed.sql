@@ -341,14 +341,14 @@ values
     'f3f3f3f3-0001-4000-8000-000000000001',
     'f2f2f2f2-0001-4000-8000-000000000001',
     '13fc314a-63cf-44a2-a7a3-d0c81c429944',
-    'si',
+    'Conforme',
     'Braccialetto in uso.'
   ),
   (
     'f3f3f3f3-0001-4000-8000-000000000002',
     'f2f2f2f2-0001-4000-8000-000000000001',
     '93a04429-c38c-4709-94d6-e2619089738a',
-    'parziale',
+    'Parziale',
     'Protocollo cadute da aggiornare.'
   );
 
