@@ -116,7 +116,7 @@ export function PwaNuova() {
 
   return (
     <div className="flex flex-1 flex-col px-4 pb-6">
-      <Intestazione titolo="Nuova segnalazione" sottotitolo="Scheda di incident reporting" />
+      <Intestazione titolo="Nuova segnalazione" sottotitolo="Scheda di incident reporting" indietro />
       <form
         className="space-y-3"
         onSubmit={(e) => {

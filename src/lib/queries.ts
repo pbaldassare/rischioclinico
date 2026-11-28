@@ -127,6 +127,17 @@ export async function fetchSegnalazioni(filtri?: FiltriAmbito) {
   return (data ?? []) as Segnalazione[];
 }
 
+/** Solo quelle inserite dall'operatore, le più recenti prima. */
+export async function fetchMieSegnalazioni(profileId: string) {
+  const { data, error } = await supabase
+    .from("segnalazioni")
+    .select(SEGNALAZIONE_SELECT)
+    .eq("inserito_da", profileId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as Segnalazione[];
+}
+
 export async function fetchSegnalazione(id: string) {
   const { data, error } = await supabase
     .from("segnalazioni")

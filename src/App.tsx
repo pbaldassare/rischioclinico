@@ -5,7 +5,9 @@ import { CatalogProvider } from "@/lib/catalog";
 import { Login } from "@/pages/Login";
 import { Installa } from "@/pages/Installa";
 import { MobileShell } from "@/mobile/MobileShell";
+import { PwaHome } from "@/pages/pwa/Home";
 import { PwaNuova } from "@/pages/pwa/Nuova";
+import { PwaDettaglio } from "@/pages/pwa/Dettaglio";
 import { PwaProfilo } from "@/pages/pwa/Profilo";
 import { Caricamento } from "@/mobile/atoms";
 import { usaPwa } from "@/lib/labels";
@@ -42,7 +44,7 @@ function RequireAuth({ pwa }: { pwa?: boolean }) {
   );
 }
 
-// La PWA fa solo segnalazioni: dopo l'invio si torna qui con un form vuoto.
+// Ogni apertura di /app/nuova parte da un form vuoto.
 function NuovaFresca() {
   return <PwaNuova key={useLocation().key} />;
 }
@@ -63,7 +65,9 @@ export default function App() {
         <Route path="/installa" element={<Installa />} />
         <Route element={<RequireAuth pwa />}>
           <Route path="/app" element={<MobileShell />}>
-            <Route index element={<NuovaFresca />} />
+            <Route index element={<PwaHome />} />
+            <Route path="nuova" element={<NuovaFresca />} />
+            <Route path="segnalazioni/:id" element={<PwaDettaglio />} />
             <Route path="profilo" element={<PwaProfilo />} />
           </Route>
         </Route>

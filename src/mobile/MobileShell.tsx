@@ -1,11 +1,12 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { PlusCircle, User, type LucideIcon } from "lucide-react";
+import { Home, PlusCircle, User, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
 
 export function MobileShell() {
   const sezioni: { to: string; end: boolean; icona: LucideIcon; label: string }[] = [
-    { to: "/app", end: true, icona: PlusCircle, label: "Nuova" },
+    { to: "/app", end: true, icona: Home, label: "Home" },
+    { to: "/app/nuova", end: false, icona: PlusCircle, label: "Nuova" },
     { to: "/app/profilo", end: false, icona: User, label: "Profilo" },
   ];
 
@@ -16,7 +17,7 @@ export function MobileShell() {
       </main>
 
       <nav className="flex-none border-t border-border bg-card pb-[env(safe-area-inset-bottom)]" aria-label="Navigazione">
-        <ul className="grid grid-cols-2 items-center px-2">
+        <ul className="grid grid-cols-3 items-center px-2">
           {sezioni.map(({ to, end, icona: Icona, label }) => (
             <li key={to}>
               <NavLink
